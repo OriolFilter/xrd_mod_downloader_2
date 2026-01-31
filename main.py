@@ -1,38 +1,62 @@
 from textual.app import App, ComposeResult
-from textual.widgets import DataTable
+from textual.widgets import DataTable, Footer, Tabs, Label
 from modClasses import AppStruct
 
-# Lists mods/current settings
-ROWS = [
-    ("enabled", "mod_name")
+TABNAMES = [
+    "Toggle Mod Display",
+    "Display Mods Info",
+    "Download/Update mods",
+    "Patch mods",  # Install etc
+    # "Launch mods", # Execute/launch # IDK
 ]
-MOD_LIST = [
-    AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots"),
-    AppStruct(repo_name="rev2-wakeup-tool", repo_owner="kkots"),
-]
 
-print(MOD_LIST)
-print(ROWS)
 
-for mod in MOD_LIST:
-    mod: AppStruct
-    ROWS.append(
-            (("[]", "[x]")[mod.enabled],
-            mod.repo_name)
-    )
+class TabsApp(App):
+    CSS = """
+        Tabs {
+            dock: top;
+        }
+        Screen {
+            align: center middle;
+        }
+        Label {
+            margin:1 1;
+            width: 100%;
+            height: 100%;
+            background: $panel;
+            border: tall $primary;
+            content-align: center middle;
+        }
+        """
 
-print(ROWS)
-
-class AppListMenu(App):
     def compose(self) -> ComposeResult:
-        yield DataTable()
+        yield Tabs(*TABNAMES)
+        yield Label()
+        yield Footer()
 
     def on_mount(self) -> None:
-        table = self.query_one(DataTable)
-        table.add_columns(*ROWS[0])
-        table.add_rows(ROWS[1:])
+        self.query_one(Tabs).focus()
 
+    def on_tabs_tab_activated(self, event: Tabs.TabActivated) -> None:
+        label = self.query_one(Label)
+        if event is None:
+            # When the tabs are cleared, event.tab will be None
+            label.visible = False
+        else:
+            label.visible = True
+            label.update(event.tab.label)
 
-app = AppListMenu()
-if __name__ == '__main__':
+    BINDINGS = [
+
+        ("z", "zzz", "zzzz")
+
+    ]
+
+    def action_zzz(self) -> None:
+        """zzz!"""
+        tabs = self.query_one(Tabs)
+        tabs.add_tab("ZZZ!")
+
+if __name__ == "__main__":
+    app = TabsApp()
     app.run()
