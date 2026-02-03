@@ -1,62 +1,76 @@
-from textual.app import App, ComposeResult
-from textual.widgets import DataTable, Footer, Tabs, Label
-from modClasses import AppStruct
+from textual.app import App, ComposeResult, Binding
+from textual.widgets import Footer, Label, Markdown, TabbedContent, TabPane
+from ListModsView import AppDataTable
 
-TABNAMES = [
-    "Toggle Mod Display",
-    "Display Mods Info",
-    "Download/Update mods",
-    "Patch mods",  # Install etc
-    # "Launch mods", # Execute/launch # IDK
-]
+LETO = """
+# Duke Leto I Atreides
+
+Head of House Atreides.
+"""
+
+JESSICA = """
+# Lady Jessica
+
+Bene Gesserit and concubine of Leto, and mother of Paul and Alia.
+"""
+
+PAUL = """
+# Paul Atreides
+
+Son of Leto and Jessica.
+"""
 
 
-class TabsApp(App):
-    CSS = """
-        Tabs {
-            dock: top;
-        }
-        Screen {
-            align: center middle;
-        }
-        Label {
-            margin:1 1;
-            width: 100%;
-            height: 100%;
-            background: $panel;
-            border: tall $primary;
-            content-align: center middle;
-        }
-        """
+# TABNAMES = [
+#     "Toggle Mod Display",
+#     "Display Mods Info",
+#     "Download/Update mods",
+#     "Patch mods",  # Install etc
+#     # "Launch mods", # Execute/launch # IDK
+# ]
 
-    def compose(self) -> ComposeResult:
-        yield Tabs(*TABNAMES)
-        yield Label()
-        yield Footer()
 
-    def on_mount(self) -> None:
-        self.query_one(Tabs).focus()
+class TabbedApp(App):
 
-    def on_tabs_tab_activated(self, event: Tabs.TabActivated) -> None:
-        label = self.query_one(Label)
-        if event is None:
-            # When the tabs are cleared, event.tab will be None
-            label.visible = False
-        else:
-            label.visible = True
-            label.update(event.tab.label)
+    tabs_menu: TabbedContent
+    """An example of tabbed content."""
 
     BINDINGS = [
-
-        ("z", "zzz", "zzzz")
-
+        Binding("a", "previous_tab", "Previous tab", show=True, priority=True),
+        Binding("d", "next_tab", "Next tab", show=True, priority=True),
     ]
 
-    def action_zzz(self) -> None:
-        """zzz!"""
-        tabs = self.query_one(Tabs)
-        tabs.add_tab("ZZZ!")
+    def compose(self) -> ComposeResult:
+        """Compose app with tabbed content."""
+        # Footer to show keys
+        yield Footer()
+
+        # Add the TabbedContent widget
+        self.tabs_menu = TabbedContent(initial="mods_info")
+        with self.tabs_menu:
+            with TabPane("Display Mods Info", id="mods_info"):  # First tab
+                yield AppDataTable(zebra_stripes=True)
+                # yield Markdown(LETO)  # Tab content
+            # with TabPane("Toggle Mod Display", id="toggle_mods_display"):
+            #     yield Markdown(JESSICA)
+
+            with TabPane("Download/Update mods", id="download_mods"):
+                yield Markdown(PAUL)
+                with TabbedContent("Paul", "Alia"):
+                    yield TabPane("Paul", Label("First child"))
+                    yield TabPane("Alia", Label("Second child"))
+            with TabPane("Patch mods", id="patch_mods"):
+                yield Markdown(PAUL)
+
+    # def action_next_tab(self):
+    #     TabbedContent.prev
+
+    def action_show_tab(self, tab: str) -> None:
+        """Switch to a new tab."""
+        self.get_child_by_type(TabbedContent).active = tab
+        # self.get_child_by_type(TabbedContent).focus(false)
+
 
 if __name__ == "__main__":
-    app = TabsApp()
-    app.run()
+    app = TabbedApp()
+    app.run(inline=True)
