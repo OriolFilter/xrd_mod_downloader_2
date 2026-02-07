@@ -31,7 +31,6 @@ Son of Leto and Jessica.
 
 
 class TabbedApp(App):
-
     tabs_menu: TabbedContent
     """An example of tabbed content."""
 
@@ -49,7 +48,7 @@ class TabbedApp(App):
         self.tabs_menu = TabbedContent(initial="mods_info")
         with self.tabs_menu:
             with TabPane("Display Mods Info", id="mods_info"):  # First tab
-                yield AppDataTable(zebra_stripes=True)
+                yield AppDataTable(zebra_stripes=True, cursor_type="row")
                 # yield Markdown(LETO)  # Tab content
             # with TabPane("Toggle Mod Display", id="toggle_mods_display"):
             #     yield Markdown(JESSICA)
