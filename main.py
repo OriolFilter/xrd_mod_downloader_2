@@ -1,6 +1,7 @@
 from textual.app import App, ComposeResult, Binding
 from textual.widgets import Footer, Label, Markdown, TabbedContent, TabPane
 from ListModsView import AppDataTable
+from Config import GlobalConfig
 
 LETO = """
 # Duke Leto I Atreides
@@ -20,7 +21,6 @@ PAUL = """
 Son of Leto and Jessica.
 """
 
-
 # TABNAMES = [
 #     "Toggle Mod Display",
 #     "Display Mods Info",
@@ -29,15 +29,21 @@ Son of Leto and Jessica.
 #     # "Launch mods", # Execute/launch # IDK
 # ]
 
+globalConfig = GlobalConfig()
+
 
 class TabbedApp(App):
     tabs_menu: TabbedContent
     """An example of tabbed content."""
 
-    BINDINGS = [
-        Binding("a", "previous_tab", "Previous tab", show=True, priority=True),
-        Binding("d", "next_tab", "Next tab", show=True, priority=True),
-    ]
+    # BINDINGS = [
+    #     Binding("a", "previous_tab", "Previous tab", show=True,
+    #             # priority=True
+    #             ),
+    #     Binding("d", "next_tab", "Next tab", show=True,
+    #             # priority=True
+    #             ),
+    # ]
 
     def compose(self) -> ComposeResult:
         """Compose app with tabbed content."""
@@ -48,7 +54,7 @@ class TabbedApp(App):
         self.tabs_menu = TabbedContent(initial="mods_info")
         with self.tabs_menu:
             with TabPane("Display Mods Info", id="mods_info"):  # First tab
-                yield AppDataTable(zebra_stripes=True, cursor_type="row")
+                yield AppDataTable(zebra_stripes=True, cursor_type="row", config=globalConfig)
                 # yield Markdown(LETO)  # Tab content
             # with TabPane("Toggle Mod Display", id="toggle_mods_display"):
             #     yield Markdown(JESSICA)

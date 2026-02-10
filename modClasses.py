@@ -16,6 +16,8 @@ class AppStruct:
     hidden: bool = False
     track_updates: bool = False
     tracked: bool = False
+    # In case multiple fulfill the same role/have the same name, ie Iquis vs Kkots, or ibrow19 for the replay takover
+    recommended: bool = False
 
     def get_app_name(self) -> str:
         return "{}/{}".format(self.repo_owner, self.repo_name)

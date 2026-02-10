@@ -1,32 +1,29 @@
-from textual.app import App, ComposeResult
+from textual.app import App, ComposeResult, Binding
 from textual.widgets import DataTable
+
+from Config import GlobalConfig
 from modClasses import AppStruct
 
 
 class AppDataTable(DataTable):
+    config: GlobalConfig
     BINDINGS = [
-        ("z", "z", "Z!")
+        ("z", "z", "Z!"),
+        # Binding("left", "previous_tab", "Previous tab", show=True, priority=True),
+        # Binding("right", "next_tab", "Next tab", show=True, priority=True),
     ]
+
+    def __init__(self, config: GlobalConfig, *args, **kwargs):
+        self.config = config
+        super().__init__(*args, **kwargs)
 
     def on_mount(self) -> None:
         # Lists mods/current settings
         rows = [
             ("enabled", "mod_name")
         ]
-        mod_list = [
-            AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots"),
-            AppStruct(repo_name="rev2-wakeup-tool", repo_owner="kkots"),
-            AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots"),
-            AppStruct(repo_name="rev2-wakeup-tool", repo_owner="kkots"),
-            AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots"),
-            AppStruct(repo_name="rev2-wakeup-tool", repo_owner="kkots"),
-            AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots"),
-            AppStruct(repo_name="rev2-wakeup-tool", repo_owner="kkots"),
-            AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots"),
-            AppStruct(repo_name="rev2-wakeup-tool", repo_owner="kkots"),
-        ]
 
-        for mod in mod_list:
+        for mod in self.config.mod_list:
             mod: AppStruct
             rows.append(
                 (("[]", "[x]")[mod.enabled],
