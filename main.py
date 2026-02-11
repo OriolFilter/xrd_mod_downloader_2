@@ -36,14 +36,14 @@ class TabbedApp(App):
     tabs_menu: TabbedContent
     """An example of tabbed content."""
 
-    # BINDINGS = [
-    #     Binding("a", "previous_tab", "Previous tab", show=True,
-    #             # priority=True
-    #             ),
-    #     Binding("d", "next_tab", "Next tab", show=True,
-    #             # priority=True
-    #             ),
-    # ]
+    BINDINGS = [
+        Binding("a", "previous_tab", "Previous tab", show=True,
+                # priority=True
+                ),
+        Binding("right", "next_tab", "Next tab", show=True,
+                # priority=True
+                ),
+    ]
 
     def compose(self) -> ComposeResult:
         """Compose app with tabbed content."""

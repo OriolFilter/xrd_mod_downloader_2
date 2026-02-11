@@ -19,7 +19,8 @@ class AppStruct:
     # In case multiple fulfill the same role/have the same name, ie Iquis vs Kkots, or ibrow19 for the replay takover
     recommended: bool = False
 
-    def get_app_name(self) -> str:
+    @property
+    def app_name(self) -> str:
         return "{}/{}".format(self.repo_owner, self.repo_name)
 
     def get_repo_url(self):
@@ -34,5 +35,5 @@ if __name__ == '__main__':
     y = AppStruct(repo_name="rev2-wakeup-tool", repo_owner="kkots")
 
     print(x.get_api_repo_url())
-    print(x.get_app_name())
+    print(x.app_name)
     print(x.get_repo_url())

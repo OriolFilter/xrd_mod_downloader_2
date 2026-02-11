@@ -9,3 +9,7 @@ https://github.com/OriolFilter/xrd_mods_downloader/blob/v0.2/init/src/apps/mod.r
 https://textual.textualize.io/widget_gallery/
 
 https://textual.textualize.io/guide/
+
+https://github.com/Textualize/textual/discussions/6281
+
+https://github.com/Textualize/textual/issues/4955
