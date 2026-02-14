@@ -8,6 +8,7 @@ from textual import log
 
 
 class ModManagerView(DataTable):
+    cursor_type = "row"
     config: GlobalConfig
     # table_struct: {str: {str: str}} = None
 

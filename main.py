@@ -56,7 +56,7 @@ class TabbedApp(App):
         with self.tabs_menu:
             with TabPane("Display Mods Info", id="mods_info"):  # First tab
                 # yield AppDataTable(zebra_stripes=True, cursor_type="row", config=globalConfig)
-                yield ModManagerView(zebra_stripes=True, config=globalConfig)
+                yield ModManagerView(zebra_stripes=True, config=globalConfig, cursor_type="row")
                 # yield ModManagerView(zebra_stripes=True, cursor_type="row", config=globalConfig)
                 # yield Markdown(LETO)  # Tab content
             # with TabPane("Toggle Mod Display", id="toggle_mods_display"):
