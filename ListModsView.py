@@ -7,11 +7,11 @@ from modClasses import AppStruct
 from textual import log
 
 
-
 class AppDataTable(DataTable):
+    cursor_type = "row"
     config: GlobalConfig
     BINDINGS = [
-        # ("z", "z", "Z!"),
+        ("z", "z", "Z!"),
         Binding("space", "toggle_display", "Toggle Display", show=True, priority=True),
         # Binding("right", "next_tab", "Next tab", show=True, priority=True),
         Binding("right", "next_tab", "Next tab", show=True, priority=False),
@@ -52,8 +52,10 @@ class AppDataTable(DataTable):
         # self.add_rows(rows[1:])
         self.focus()
 
-    # def action_z(self) -> None:
-    #     self.add_row("[]", "z")
+    def action_z(self) -> None:
+        # self.add_row("[]", "z")
+        self.add_row("[]")
+        # self.parent
 
     def action_toggle_display(self) -> None:
         row_pos = self.coordinate_to_cell_key(self.cursor_coordinate)[0]

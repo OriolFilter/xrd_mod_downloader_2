@@ -19,10 +19,10 @@ class GlobalConfig:
 
         for mod in mod_list:
             mod: AppStruct
-            print(mod.app_name)
+            # print(mod.app_name)
             if not mod.app_name in self.mod_dict:
                 self.mod_dict[mod.app_name] = mod
-                print(self.mod_dict.get(mod.app_name).enabled)
+                # print(self.mod_dict.get(mod.app_name).enabled)
 
     @property
     def mod_list(self) -> list[AppStruct]:

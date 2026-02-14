@@ -2,6 +2,7 @@ from textual.app import App, ComposeResult, Binding
 from textual.widgets import Footer, Label, Markdown, TabbedContent, TabPane
 from ListModsView import AppDataTable
 from Config import GlobalConfig
+from modManagerView import ModManagerView
 
 LETO = """
 # Duke Leto I Atreides
@@ -54,7 +55,9 @@ class TabbedApp(App):
         self.tabs_menu = TabbedContent(initial="mods_info")
         with self.tabs_menu:
             with TabPane("Display Mods Info", id="mods_info"):  # First tab
-                yield AppDataTable(zebra_stripes=True, cursor_type="row", config=globalConfig)
+                # yield AppDataTable(zebra_stripes=True, cursor_type="row", config=globalConfig)
+                yield ModManagerView(zebra_stripes=True, config=globalConfig)
+                # yield ModManagerView(zebra_stripes=True, cursor_type="row", config=globalConfig)
                 # yield Markdown(LETO)  # Tab content
             # with TabPane("Toggle Mod Display", id="toggle_mods_display"):
             #     yield Markdown(JESSICA)
