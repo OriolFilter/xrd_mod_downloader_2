@@ -23,10 +23,11 @@ class ModManagerView(DataTable):
         self.config = config
 
         self.__column_fields = {
-            "app_name": "AppName",
+            # "app_name": "AppName",
             "tag_name": "Current Version",
             "latest_version_available": "Latest Version Available",  # Or Up to date
             "patched": "Patched",
+            "description": "Description",
         }
         super().__init__(*args, **kwargs)
 
@@ -71,8 +72,9 @@ class ModManagerView(DataTable):
                 "tag_name": app.tag_name,
                 "latest_version_available": "hi",
                 "patched": "Not Patched",
+                "description": app.description,
             }
 
             # raise Exception(columns)
             for column in columns:
-                self.update_cell(value=Text(app_info.get(column)), row_key=row, column_key=column)
+                self.update_cell(value=Text(app_info.get(column) or "----"), row_key=row, column_key=column)
