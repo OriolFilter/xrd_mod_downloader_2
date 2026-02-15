@@ -9,12 +9,13 @@ class GlobalConfig:
 
     def __init__(self):
         mod_list = [
-            AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots"),
-            AppStruct(repo_name="rev2-wakeup-tool", repo_owner="kkots"),
-            AppStruct(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", enabled=True),
-            AppStruct(repo_name="GGXrdMirrorColorSelect", repo_owner="kkots"),
-            AppStruct(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots"),
-            AppStruct(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19"),
+            AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots", description="Hitbox/framedata viewer "
+                                                                                             "mod"),
+            # AppStruct(repo_name="rev2-wakeup-tool", repo_owner="kkots"),
+            # AppStruct(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", enabled=True),
+            # AppStruct(repo_name="GGXrdMirrorColorSelect", repo_owner="kkots"),
+            # AppStruct(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots"),
+            # AppStruct(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19"),
         ]
 
         for mod in mod_list:

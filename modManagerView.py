@@ -1,3 +1,5 @@
+import time
+
 from rich.text import TextType, Text
 from textual.app import App, ComposeResult, Binding
 from textual.widgets import DataTable
@@ -6,30 +8,37 @@ from Config import GlobalConfig
 from modClasses import AppStruct
 from textual import log
 
+NO = Text("No", style="#a83a32")
+FALSE = NO
+YES = Text("True", style="#32a852")
+TRUE = YES
+
 
 class ModManagerView(DataTable):
-    cursor_type = "row"
     config: GlobalConfig
     # table_struct: {str: {str: str}} = None
 
     __column_fields: {str: str} = None
 
     BINDINGS = [
-        Binding("u", "update", "u", show=True, priority=True),
+        Binding("u", "update_to_latest", "update_to_latest", show=True, priority=True),
+        Binding("p", "patch_app", "patch", show=True, priority=True),
+        # Binding("s", "search_updates", "s", show=True, priority=True),
     ]
 
     # { field/key: display_name }
 
     def __init__(self, config: GlobalConfig, *args, **kwargs):
         self.config = config
-
         self.__column_fields = {
             # "app_name": "AppName",
-            "tag_name": "Current Version",
-            "latest_version_available": "Latest Version Available",  # Or Up to date
-            "patched": "Patched",
             "description": "Description",
+            "patched": "Patched",
+            "tag_name": "Current Version                   ",
+            "latest_version_available": "Latest Version Available",  # Or Up to date
+            "up_to_date": "Up To Date",
         }
+
         super().__init__(*args, **kwargs)
 
     def on_mount(self) -> None:
@@ -49,16 +58,31 @@ class ModManagerView(DataTable):
             )
 
         self.__update_set_values()
+        # self.show_cursor = False
 
-    def __action_update(self):
-        pass
+    # def action_search_updates_app(self):
+    #     pass
+
+    def action_update_to_latest(self):
+        row_pos = self.coordinate_to_cell_key(self.cursor_coordinate)[0]
+        # {'value': 'kkots/GGXrdBackgroundGamepad'}
+        row_key = row_pos.value
+        app = self.config.get_app(row_key)
+        # self.show_cursor = not self.show_cursor
+        if app.update_to(release=app.get_latest_release_available()):
+            # OK update row
+            self.__update_set_values(rows=row_key, columns=["tag_name", "up_to_date"])
+        else:
+            # Failed return/generate error
+            pass
+        # time.sleep(6)
+        # self.show_cursor = True
 
     def __update_set_values(self, columns: str | [str] = None, rows: str | [str] = None) -> None:
         if columns is str:
             columns = [columns]
         else:
             # get all keys
-            # columns = self.rows.items()
             columns = [colkey.value for colkey in self.columns.keys()]
         # raise Exception(columns)
         if rows is str:
@@ -68,14 +92,23 @@ class ModManagerView(DataTable):
             rows = [rowkey.value for rowkey in self.rows.keys()]
         for row in rows:
             app = self.config.get_app(row)
+            # time.sleep(0.50)
+            # latest_release = app.get_latest_release_available()
+            latest_release = "paco"
+
             app_info = {
                 "app_name": app.app_name,
                 "tag_name": app.tag_name,
-                "latest_version_available": "hi",
-                "patched": "Not Patched",
+                "latest_version_available": latest_release,
+                # "latest_version_available": latest_release.name,
+                "patched": NO,
                 "description": app.description,
+                "up_to_date": NO
             }
 
-            # raise Exception(columns)
             for column in columns:
-                self.update_cell(value=Text(app_info.get(column) or "----"), row_key=row, column_key=column)
+                # self.update_cell(value=Text(str("cell"), style="italic #03AC13", justify="right"), row_key=row, column_key=column)
+                if app_info.get(column) is not Text:
+                    self.update_cell(value=app_info.get(column), row_key=row, column_key=column)
+                else:
+                    self.update_cell(value=Text(app_info.get(column) or "----"), row_key=row, column_key=column)

@@ -16,12 +16,6 @@ JESSICA = """
 Bene Gesserit and concubine of Leto, and mother of Paul and Alia.
 """
 
-PAUL = """
-# Paul Atreides
-
-Son of Leto and Jessica.
-"""
-
 # TABNAMES = [
 #     "Toggle Mod Display",
 #     "Display Mods Info",
@@ -38,12 +32,12 @@ class TabbedApp(App):
     """An example of tabbed content."""
 
     BINDINGS = [
-        Binding("a", "previous_tab", "Previous tab", show=True,
-                # priority=True
-                ),
-        Binding("right", "next_tab", "Next tab", show=True,
-                # priority=True
-                ),
+        # Binding("left", "previous_tab", "Previous tab", show=True,
+        #         # priority=True
+        #         ),
+        # Binding("right", "next_tab", "Next tab", show=True,
+        #         # priority=True
+        #         ),
     ]
 
     def compose(self) -> ComposeResult:
@@ -62,13 +56,18 @@ class TabbedApp(App):
             # with TabPane("Toggle Mod Display", id="toggle_mods_display"):
             #     yield Markdown(JESSICA)
 
-            with TabPane("Download/Update mods", id="download_mods"):
-                yield Markdown(PAUL)
+            with TabPane("Others", id="Others"):
+                yield Markdown("# TODO\n## TODO TODO\n### TODO TODO TODO")
                 with TabbedContent("Paul", "Alia"):
                     yield TabPane("Paul", Label("First child"))
                     yield TabPane("Alia", Label("Second child"))
-            with TabPane("Patch mods", id="patch_mods"):
-                yield Markdown(PAUL)
+            # with TabPane("Download/Update mods", id="download_mods"):
+            #     yield Markdown(PAUL)
+            #     with TabbedContent("Paul", "Alia"):
+            #         yield TabPane("Paul", Label("First child"))
+            #         yield TabPane("Alia", Label("Second child"))
+            # with TabPane("Patch mods", id="patch_mods"):
+            #     yield Markdown(PAUL)
 
     # def action_next_tab(self):
     #     TabbedContent.prev
@@ -77,6 +76,10 @@ class TabbedApp(App):
         """Switch to a new tab."""
         self.get_child_by_type(TabbedContent).active = tab
         # self.get_child_by_type(TabbedContent).focus(false)
+
+    def on_mount(self) -> None:
+        # noinspection PyTypeChecker
+        self.theme = "dracula"
 
 
 if __name__ == "__main__":
