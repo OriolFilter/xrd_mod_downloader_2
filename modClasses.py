@@ -1,4 +1,7 @@
 import dataclasses
+import json
+from json import JSONEncoder
+
 from github import Github, GitRelease
 
 
@@ -15,7 +18,7 @@ class AppStruct:
     patched: bool = False
     enabled: bool = False  # IDK
     hidden: bool = False
-    release_available: [GitRelease] = None
+    # release_available: [GitRelease] = None
     # track_updates: bool = False
     # tracked: bool = False
     # In case multiple fulfill the same role/have the same name, ie Iquis vs Kkots, or ibrow19 for the replay takover
@@ -52,6 +55,15 @@ class AppStruct:
         # raise Exception(self.tag_name)
         return True
         # raise NotImplementedError
+
+    def default(self, obj):
+        if isinstance(obj, complex):
+            return [obj.real, obj.imag]
+        # Let the base class default method raise the TypeError
+        return super().default(obj)
+
+    # def toJson(self):
+    #     return json.dumps({"hi": "test"}, default=lambda o: o.__dict__)
 
 
 if __name__ == '__main__':

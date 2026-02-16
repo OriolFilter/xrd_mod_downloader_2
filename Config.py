@@ -65,6 +65,7 @@ class GlobalConfig:
 
         # fields_to_export: [str] = ["tag_name","url_source_release"]
         for key, app in self.mod_dict.items():
+            raise Exception(json.dumps(app))
             app: AppStruct
             app_config = {
                 "tag_name": app.tag_name,
