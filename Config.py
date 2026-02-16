@@ -65,18 +65,8 @@ class GlobalConfig:
 
         # fields_to_export: [str] = ["tag_name","url_source_release"]
         for key, app in self.mod_dict.items():
-            raise Exception(json.dumps(app))
             app: AppStruct
-            app_config = {
-                "tag_name": app.tag_name,
-                "url_source_release": app.url_source_release,
-                # automatically_patch: bool = None
-                # patched: False,
-                # enabled: False  # IDK
-                # hidden: False
-            }
-            config_dict[key] = app_config
-
+            config_dict[key] = app.export_config_dict()
         with open(self.config_file_path, 'w+', encoding="utf-8") as file:
             file.write(json.dumps(config_dict))
         return True

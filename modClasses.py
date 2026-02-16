@@ -62,8 +62,15 @@ class AppStruct:
         # Let the base class default method raise the TypeError
         return super().default(obj)
 
-    # def toJson(self):
-    #     return json.dumps({"hi": "test"}, default=lambda o: o.__dict__)
+    def export_config_dict(self) -> {str: str | int | None | bool}:
+        return {
+                "tag_name": self.tag_name,
+                "url_source_release": self.url_source_release,
+                # automatically_patch: bool = None
+                # patched: False,
+                # enabled: False  # IDK
+                # hidden: False
+            }
 
 
 if __name__ == '__main__':
