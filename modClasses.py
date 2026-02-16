@@ -49,8 +49,9 @@ class AppStruct:
     def update_to(self, release: GitRelease):
         pass
         self.tag_name = release.name
+        # raise Exception(self.tag_name)
         return True
-        raise NotImplementedError
+        # raise NotImplementedError
 
 
 if __name__ == '__main__':

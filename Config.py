@@ -2,6 +2,7 @@ from modClasses import *
 import os
 import json
 
+
 class GlobalConfig:
     mod_list: list[AppStruct]
     mod_dict: {
@@ -25,7 +26,6 @@ class GlobalConfig:
             if not mod.app_name in self.mod_dict:
                 self.mod_dict[mod.app_name] = mod
                 # print(self.mod_dict.get(mod.app_name).enabled)
-        self.save_config()
 
     @property
     def mod_list(self) -> list[AppStruct]:
@@ -48,6 +48,7 @@ class GlobalConfig:
     @property
     def config_file_path(self):
         return f"{self.workdir}/config.json"
+        # return f"{self.workdir}/config.json"
 
     def load_config(self):
         # Load default -> Merge differences
@@ -59,10 +60,22 @@ class GlobalConfig:
         # If doesn't -> Load default
         raise NotImplementedError
 
-    def save_config(self):
-        with open('workfile', 'w', encoding="utf-8") as file:
-            file.write(json.dumps(self.mod_dict))
-        # if os.path.exists(self.config_file_path) and os.path.isfile(self.config_file_path):
+    def save_config(self) -> bool:
+        config_dict: {str: {str: str}} = {}
 
-        # else:
-        #     raise Exception(f"Configuration file path ({self.config_file_path}) contains a folder!")
+        # fields_to_export: [str] = ["tag_name","url_source_release"]
+        for key, app in self.mod_dict.items():
+            app: AppStruct
+            app_config = {
+                "tag_name": app.tag_name,
+                "url_source_release": app.url_source_release,
+                # automatically_patch: bool = None
+                # patched: False,
+                # enabled: False  # IDK
+                # hidden: False
+            }
+            config_dict[key] = app_config
+
+        with open(self.config_file_path, 'w+', encoding="utf-8") as file:
+            file.write(json.dumps(config_dict))
+        return True

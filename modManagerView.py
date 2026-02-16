@@ -23,6 +23,7 @@ class ModManagerView(DataTable):
     BINDINGS = [
         Binding("u", "update_to_latest", "update_to_latest", show=True, priority=True),
         Binding("p", "patch_app", "patch", show=True, priority=True),
+        Binding("s", "save_config", "save", show=True, priority=True),
         # Binding("s", "search_updates", "s", show=True, priority=True),
     ]
 
@@ -63,6 +64,10 @@ class ModManagerView(DataTable):
     # def action_search_updates_app(self):
     #     pass
 
+    def action_save_config(self) -> bool:
+        self.show_cursor = False
+        return self.config.save_config()
+
     def action_update_to_latest(self):
         row_pos = self.coordinate_to_cell_key(self.cursor_coordinate)[0]
         # {'value': 'kkots/GGXrdBackgroundGamepad'}
@@ -75,6 +80,7 @@ class ModManagerView(DataTable):
         else:
             # Failed return/generate error
             pass
+        # raise Exception(app.tag_name)
         # time.sleep(6)
         # self.show_cursor = True
 
