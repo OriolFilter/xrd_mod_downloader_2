@@ -50,7 +50,10 @@ class TabbedApp(App):
         with self.tabs_menu:
             with TabPane("Display Mods Info", id="mods_info"):  # First tab
                 # yield AppDataTable(zebra_stripes=True, cursor_type="row", config=globalConfig)
-                yield ModManagerView(zebra_stripes=True, config=globalConfig, cursor_type="row")
+                yield ModManagerView(zebra_stripes=True, config=globalConfig, cursor_type="row",
+                                     cursor_foreground_priority="renderable",
+                                     # cursor_background_priority="renderable"
+                                     )
                 # yield ModManagerView(zebra_stripes=True, cursor_type="row", config=globalConfig)
                 # yield Markdown(LETO)  # Tab content
             # with TabPane("Toggle Mod Display", id="toggle_mods_display"):
@@ -79,7 +82,8 @@ class TabbedApp(App):
 
     def on_mount(self) -> None:
         # noinspection PyTypeChecker
-        self.theme = "dracula"
+        # self.theme = "dracula"
+        pass
 
 
 if __name__ == "__main__":
