@@ -4,16 +4,16 @@ import json
 
 
 class GlobalConfig:
-    mod_list: list[AppStruct]
+    mod_list: list[AppStruct,WakeUpTool]
     mod_dict: {
         'str': AppStruct
     } = {}
 
     def __init__(self):
         mod_list = [
-            AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots", description="Hitbox/framedata viewer "
-                                                                                             "mod"),
-            AppStruct(repo_name="rev2-wakeup-tool", repo_owner="kkots"),
+            # AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots", description="Hitbox/framedata viewer "
+            #                                                                                  "mod"),
+            WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots"),
             # AppStruct(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", enabled=True),
             # AppStruct(repo_name="GGXrdMirrorColorSelect", repo_owner="kkots"),
             # AppStruct(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots"),
@@ -91,3 +91,7 @@ class GlobalConfig:
         with open(self.config_file_path, 'w+', encoding="utf-8") as file:
             file.write(json.dumps(config_dict))
         return True
+
+    @property
+    def app_download_path(self) -> str:
+        return f"{self.workdir}/downloads"

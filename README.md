@@ -13,3 +13,5 @@ https://textual.textualize.io/guide/
 https://github.com/Textualize/textual/discussions/6281
 
 https://github.com/Textualize/textual/issues/4955
+
+TODO normalize either use of "app" or "mod"

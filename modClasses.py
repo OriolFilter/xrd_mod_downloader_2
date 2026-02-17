@@ -1,8 +1,10 @@
 import dataclasses
 import json
+import os.path
 from json import JSONEncoder
 
 from github import Github, GitRelease
+from github.GitReleaseAsset import GitReleaseAsset
 
 
 @dataclasses.dataclass
@@ -25,6 +27,7 @@ class AppStruct:
     recommended: bool = False
     description: str = ""
     __latest_release_available: GitRelease = None
+    _can_be_launched = False
 
     @property
     def app_name(self) -> str:
@@ -40,7 +43,8 @@ class AppStruct:
     #     cli = Github()
     #     self.release_available = cli.get_repo(self.app_name).get_releases()
 
-    def get_latest_release(self) -> GitRelease:
+    @property
+    def latest_release(self) -> GitRelease:
         cli = Github()
         if not self.__latest_release_available:
             self.__latest_release_available = cli.get_repo(self.app_name).get_latest_release()
@@ -53,11 +57,11 @@ class AppStruct:
             self.__latest_release_available = cli.get_repo(self.app_name).get_latest_release()
         return self.__latest_release_available.tag_name
 
-    def __patch_windows(self):
-        raise NotImplementedError
-
-    def __patch_linux(self):
-        raise NotImplementedError
+    # def __patch_windows(self):
+    #     raise NotImplementedError
+    #
+    # def __patch_linux(self):
+    #     raise NotImplementedError
 
     def patch(self):
         # If linux
@@ -96,15 +100,68 @@ class AppStruct:
             return True
         return False
 
-    def download_mod(self) -> None:
-        """Download the mod files"""
-        raise NotImplementedError
+    def download_app(self, path: str, release: GitRelease):
+        """Download the mod/app files"""
+        self.__download_app(path=path, release=release)
+
+    def __download_app(self, path: str, release: GitRelease) -> None:
+        files_to_download: [GitReleaseAsset] = []
+        assets_whitelist = self.get_assets_whitelist(release=release)
+
+        release: GitRelease
+        for asset in release.assets:
+            asset: GitReleaseAsset
+            if asset.name in assets_whitelist:
+                files_to_download.append(asset)
+        # raise Exception(f"{len(files_to_download) > 0}?")
+        if not len(files_to_download) > 0:
+            raise Exception(
+                "No files matched the criteria to be Download.\nFiles matched: {}.\nFiles whitelisted: {}\nFiles found: {}".format(
+                    files_to_download,
+                    assets_whitelist,
+                    [asset.name for asset in release.assets])
+            )
+        # Check download folder exists
+        if not os.path.exists(path=path):
+            os.mkdir(path=path)
+        elif not os.path.isdir(path):
+            raise Exception("Downloads path ({}) is occupied by a file".format(path))
+
+        for asset in files_to_download:
+            asset: GitReleaseAsset
+            asset.download_asset(path=f"{path}/{asset.name}")
+
+        # For each zip unzip
+        ## TODO
+
+    def get_assets_whitelist(self, release: GitRelease) -> [str]:
+        raise NotImplementedError("_download_app for app {}".format(self.__class__))
+
+    def launch(self):
+        if self.can_be_launched():
+            self._launch()
+        else:
+            raise Exception("Can't be launched")
+
+    def _launch(self):
+        raise NotImplementedError("_launch for app {}".format(self.__class__))
+
+    @property
+    def installed(self) -> bool:
+        return any(self.tag_name)
+
+    def can_be_launched(self) -> bool:
+        return self.installed or self._can_be_launched
 
 
-if __name__ == '__main__':
-    x = AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots")
-    y = AppStruct(repo_name="rev2-wakeup-tool", repo_owner="kkots")
+class WakeUpTool(AppStruct):
+    _can_be_launched = True
 
-    print(x.get_api_repo_url())
-    print(x.app_name)
-    print(x.get_repo_url())
+    def get_assets_whitelist(self, release: GitRelease) -> [str]:
+        assets_whitelist = ["GGXrdReversalTool.{}.zip".format(release.tag_name),
+                            "GGXrdReversalTool-{}.zip".format(release.tag_name)]
+
+        return assets_whitelist
+
+    def _install(self):
+        pass
