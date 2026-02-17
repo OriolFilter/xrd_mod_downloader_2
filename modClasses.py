@@ -24,6 +24,7 @@ class AppStruct:
     # In case multiple fulfill the same role/have the same name, ie Iquis vs Kkots, or ibrow19 for the replay takover
     recommended: bool = False
     description: str = ""
+    __latest_release_available: GitRelease = None
 
     @property
     def app_name(self) -> str:
@@ -39,9 +40,18 @@ class AppStruct:
     #     cli = Github()
     #     self.release_available = cli.get_repo(self.app_name).get_releases()
 
-    def get_latest_release_available(self, prerelease=False) -> GitRelease:
+    def get_latest_release(self) -> GitRelease:
         cli = Github()
-        return cli.get_repo(self.app_name).get_latest_release()
+        if not self.__latest_release_available:
+            self.__latest_release_available = cli.get_repo(self.app_name).get_latest_release()
+        return self.__latest_release_available
+
+    @property
+    def latest_release_name(self) -> str:
+        cli = Github()
+        if not self.__latest_release_available:
+            self.__latest_release_available = cli.get_repo(self.app_name).get_latest_release()
+        return self.__latest_release_available.tag_name
 
     def __patch_windows(self):
         raise NotImplementedError
@@ -64,7 +74,7 @@ class AppStruct:
 
     def update_to(self, release: GitRelease):
         pass
-        self.tag_name = release.name
+        self.tag_name = release.tag_name
         # raise Exception(self.tag_name)
         return True
         # raise NotImplementedError
@@ -79,6 +89,16 @@ class AppStruct:
             "enabled": self.enabled,
             "hidden": self.hidden,
         }
+
+    @property
+    def up_to_date(self) -> bool:
+        if self.tag_name and self.__latest_release_available and self.tag_name == self.__latest_release_available.tag_name:
+            return True
+        return False
+
+    def download_mod(self) -> None:
+        """Download the mod files"""
+        raise NotImplementedError
 
 
 if __name__ == '__main__':

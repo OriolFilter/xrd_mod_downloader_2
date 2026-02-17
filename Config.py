@@ -14,7 +14,7 @@ class GlobalConfig:
             AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots", description="Hitbox/framedata viewer "
                                                                                              "mod"),
             AppStruct(repo_name="rev2-wakeup-tool", repo_owner="kkots"),
-            AppStruct(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", enabled=True),
+            # AppStruct(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", enabled=True),
             # AppStruct(repo_name="GGXrdMirrorColorSelect", repo_owner="kkots"),
             # AppStruct(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots"),
             # AppStruct(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19"),
@@ -34,7 +34,7 @@ class GlobalConfig:
             yield mod
 
     def get_app(self, app_name: str) -> AppStruct:
-        return self.mod_dict.get(app_name)
+        return self.mod_dict.get(app_name, None)
 
     @property
     def workdir(self) -> str:
@@ -63,8 +63,16 @@ class GlobalConfig:
                 app_name: str
                 app_values: {str: str}
                 app = self.get_app(app_name)
-                for key, value in app_values.items():
-                    app.__setattr__(key, value)
+                app: AppStruct
+                if app:
+                    # with self.get_app(app_name) as app:
+                    for key, value in app_values.items():
+                        if hasattr(app, key):
+                            app.__setattr__(key, value)
+                        else:
+                            print(f"> Field for app {app_name} couldn't load due to not matching a variable. Skipping.")
+                else:
+                    print(f"> Config for app {app_name} couldn't load due to not matching any app by name. Skipping.")
 
             del app_name, app_values
             return True

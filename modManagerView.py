@@ -8,10 +8,11 @@ from Config import GlobalConfig
 from modClasses import AppStruct
 from textual import log
 
-NO = Text("No", style="#a83a32")
+NO = Text("No", style="#a83a32 bold")
 FALSE = NO
-YES = Text("True", style="#32a852")
+YES = Text("True", style="#32a852 bold")
 TRUE = YES
+UNKNOWN = Text("?", style="#d8db23 bold")
 
 
 class ModManagerView(DataTable):
@@ -23,7 +24,9 @@ class ModManagerView(DataTable):
     BINDINGS = [
         Binding("u", "update_to_latest", "update_to_latest", show=True, priority=True),
         Binding("p", "patch_app", "patch", show=True, priority=True),
+        Binding("i", "search_updates", "search_updates", show=True, priority=True),
         Binding("s", "save_config", "save", show=True, priority=True),
+        Binding("f", "download", "download_files", show=True, priority=True),
         # Binding("s", "search_updates", "s", show=True, priority=True),
     ]
 
@@ -65,8 +68,18 @@ class ModManagerView(DataTable):
     #     pass
 
     def action_save_config(self) -> bool:
-        self.show_cursor = False
+        # self.show_cursor = False
         return self.config.save_config()
+
+    def action_search_updates(self):
+        row_pos = self.coordinate_to_cell_key(self.cursor_coordinate)[0]
+        row_key = row_pos.value
+        app = self.config.get_app(row_key)
+        try:
+            app.get_latest_release()
+            self.__update_set_values(rows=row_key, columns=["latest_version_available"])
+        except Exception as e:
+            raise e
 
     def action_update_to_latest(self):
         row_pos = self.coordinate_to_cell_key(self.cursor_coordinate)[0]
@@ -76,12 +89,12 @@ class ModManagerView(DataTable):
         # self.show_cursor = not self.show_cursor
         # TODO try except: show error window
         # TODO set rate limit
-        if app.update_to(release=app.get_latest_release_available()):
-            # OK update row
+        try:
+            app.update_to(release=app.get_latest_release())
             self.__update_set_values(rows=row_key, columns=["tag_name", "up_to_date"])
-        else:
-            # Failed return/generate error
-            pass
+
+        except Exception as e:
+            raise e
 
     def __update_set_values(self, columns: str | [str] = None, rows: str | [str] = None) -> None:
         if columns is str:
@@ -99,16 +112,16 @@ class ModManagerView(DataTable):
             app = self.config.get_app(row)
             # time.sleep(0.50)
             # latest_release = app.get_latest_release_available()
-            latest_release = "paco"
+            # latest_release = "paco"
 
             app_info = {
                 "app_name": app.app_name,
                 "tag_name": app.tag_name,
-                "latest_version_available": latest_release,
+                "latest_version_available": app.latest_release_name,
                 # "latest_version_available": latest_release.name,
-                "patched": NO,
+                "patched": (NO, TRUE)[app.patched],
                 "description": app.description,
-                "up_to_date": NO
+                "up_to_date": (NO, TRUE)[app.up_to_date]
             }
 
             for column in columns:
@@ -116,4 +129,4 @@ class ModManagerView(DataTable):
                 if app_info.get(column) is not Text:
                     self.update_cell(value=app_info.get(column), row_key=row, column_key=column)
                 else:
-                    self.update_cell(value=Text(app_info.get(column) or "----"), row_key=row, column_key=column)
+                    self.update_cell(value=Text(app_info.get(column) or UNKNOWN), row_key=row, column_key=column)
