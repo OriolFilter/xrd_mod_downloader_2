@@ -74,15 +74,14 @@ class ModManagerView(DataTable):
         row_key = row_pos.value
         app = self.config.get_app(row_key)
         # self.show_cursor = not self.show_cursor
+        # TODO try except: show error window
+        # TODO set rate limit
         if app.update_to(release=app.get_latest_release_available()):
             # OK update row
             self.__update_set_values(rows=row_key, columns=["tag_name", "up_to_date"])
         else:
             # Failed return/generate error
             pass
-        # raise Exception(app.tag_name)
-        # time.sleep(6)
-        # self.show_cursor = True
 
     def __update_set_values(self, columns: str | [str] = None, rows: str | [str] = None) -> None:
         if columns is str:

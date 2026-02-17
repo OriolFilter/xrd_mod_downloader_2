@@ -25,6 +25,7 @@ Bene Gesserit and concubine of Leto, and mother of Paul and Alia.
 # ]
 
 globalConfig = GlobalConfig()
+print(f"Found existing config? {globalConfig.load_config()}")
 
 
 class TabbedApp(App):

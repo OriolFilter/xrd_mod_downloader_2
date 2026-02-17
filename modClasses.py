@@ -9,7 +9,7 @@ from github import Github, GitRelease
 class AppStruct:
     repo_owner: str
     repo_name: str
-    id: int | None = None
+    id: str | None = None
     tag_name: str | None = None
     published_at: str | None = None
     # app_type: str # Shouldn't be necessary/helpful.
@@ -23,7 +23,7 @@ class AppStruct:
     # tracked: bool = False
     # In case multiple fulfill the same role/have the same name, ie Iquis vs Kkots, or ibrow19 for the replay takover
     recommended: bool = False
-    description: str = None
+    description: str = ""
 
     @property
     def app_name(self) -> str:
@@ -43,11 +43,24 @@ class AppStruct:
         cli = Github()
         return cli.get_repo(self.app_name).get_latest_release()
 
-    def patch_windows(self):
+    def __patch_windows(self):
         raise NotImplementedError
 
-    def patch_linux(self):
+    def __patch_linux(self):
         raise NotImplementedError
+
+    def patch(self):
+        # If linux
+        # if Windows
+        # Else
+        linux = False
+        windows = False
+        if linux:
+            ...
+        elif windows:
+            ...
+        else:
+            raise NotImplementedError
 
     def update_to(self, release: GitRelease):
         pass
@@ -56,21 +69,16 @@ class AppStruct:
         return True
         # raise NotImplementedError
 
-    def default(self, obj):
-        if isinstance(obj, complex):
-            return [obj.real, obj.imag]
-        # Let the base class default method raise the TypeError
-        return super().default(obj)
-
     def export_config_dict(self) -> {str: str | int | None | bool}:
         return {
-                "tag_name": self.tag_name,
-                "url_source_release": self.url_source_release,
-                # automatically_patch: bool = None
-                # patched: False,
-                # enabled: False  # IDK
-                # hidden: False
-            }
+            "id": self.id,
+            "tag_name": self.tag_name,
+            "published_at": self.published_at,
+            "url_source_release": self.url_source_release,
+            "patched": self.patched,
+            "enabled": self.enabled,
+            "hidden": self.hidden,
+        }
 
 
 if __name__ == '__main__':

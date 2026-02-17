@@ -50,15 +50,28 @@ class GlobalConfig:
         return f"{self.workdir}/config.json"
         # return f"{self.workdir}/config.json"
 
-    def load_config(self):
+    def load_config(self) -> bool:
         # Load default -> Merge differences
         # If exists -> load
         if os.path.exists(self.config_file_path) and os.path.isfile(self.config_file_path):
             # For app -> check if config says something and import fields
-            pass
+            user_config: {str: {str}} = None
+            with open(self.config_file_path, 'r', encoding="utf-8") as user_file:
+                user_config = json.loads(user_file.read())
+
+            for app_name, app_values in user_config.items():
+                app_name: str
+                app_values: {str: str}
+                app = self.get_app(app_name)
+                for key, value in app_values.items():
+                    app.__setattr__(key, value)
+
+            del app_name, app_values
+            return True
 
         # If doesn't -> Load default
-        raise NotImplementedError
+        return False
+        # raise NotImplementedError
 
     def save_config(self) -> bool:
         config_dict: {str: {str: str}} = {}
