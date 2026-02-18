@@ -2,6 +2,7 @@ import dataclasses
 import json
 import os.path
 from json import JSONEncoder
+from zipfile import ZipFile
 
 from github import Github, GitRelease
 from github.GitReleaseAsset import GitReleaseAsset
@@ -107,7 +108,7 @@ class AppStruct:
     def __download_app(self, path: str, release: GitRelease) -> None:
         files_to_download: [GitReleaseAsset] = []
         assets_whitelist = self.get_assets_whitelist(release=release)
-        app_download_folder = f"{path}/{release.tag_name}"
+        app_download_folder_path = "{}/{}/{}".format(path, self.app_name.replace("/", "_"), release.tag_name)
 
         release: GitRelease
         for asset in release.assets:
@@ -123,17 +124,21 @@ class AppStruct:
                     [asset.name for asset in release.assets])
             )
         # Check download folder exists
-        if not os.path.exists(path=app_download_folder):
-            os.makedirs(app_download_folder, exist_ok=True)
-        elif not os.path.isdir(app_download_folder):
-            raise Exception("Downloads path ({}) is occupied by a file".format(app_download_folder))
+        if not os.path.exists(path=app_download_folder_path):
+            os.makedirs(app_download_folder_path, exist_ok=True)
+        elif not os.path.isdir(app_download_folder_path):
+            raise Exception("Downloads path ({}) is occupied by a file".format(app_download_folder_path))
 
         for asset in files_to_download:
             asset: GitReleaseAsset
-            asset.download_asset(path=f"{app_download_folder}/{asset.name}")
+            asset.download_asset(path=f"{app_download_folder_path}/{asset.name}")
 
         # For each zip unzip
-        ## TODO
+        for file in files_to_download:
+            if file.name.endswith(".zip"):
+                with ZipFile(f"{app_download_folder_path}/{file.name}") as z:
+                    z.extractall(path=app_download_folder_path)
+                    # TODO only extract desired files
 
     def get_assets_whitelist(self, release: GitRelease) -> [str]:
         raise NotImplementedError("_download_app for app {}".format(self.__class__))
