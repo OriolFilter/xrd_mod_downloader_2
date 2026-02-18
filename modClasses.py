@@ -107,6 +107,7 @@ class AppStruct:
     def __download_app(self, path: str, release: GitRelease) -> None:
         files_to_download: [GitReleaseAsset] = []
         assets_whitelist = self.get_assets_whitelist(release=release)
+        app_download_folder = f"{path}/{release.tag_name}"
 
         release: GitRelease
         for asset in release.assets:
@@ -122,14 +123,14 @@ class AppStruct:
                     [asset.name for asset in release.assets])
             )
         # Check download folder exists
-        if not os.path.exists(path=path):
-            os.mkdir(path=path)
-        elif not os.path.isdir(path):
-            raise Exception("Downloads path ({}) is occupied by a file".format(path))
+        if not os.path.exists(path=app_download_folder):
+            os.makedirs(app_download_folder, exist_ok=True)
+        elif not os.path.isdir(app_download_folder):
+            raise Exception("Downloads path ({}) is occupied by a file".format(app_download_folder))
 
         for asset in files_to_download:
             asset: GitReleaseAsset
-            asset.download_asset(path=f"{path}/{asset.name}")
+            asset.download_asset(path=f"{app_download_folder}/{asset.name}")
 
         # For each zip unzip
         ## TODO
