@@ -26,7 +26,7 @@ class ModManagerView(DataTable):
         Binding("p", "patch_app", "patch", show=True, priority=True),
         # Binding("i", "search_updates", "search_updates", show=True, priority=True), # Checks on boot
         Binding("s", "save_config", "save", show=True, priority=True),
-        Binding("f", "download_latest", "download_latest", show=True, priority=True),
+        # Binding("f", "download_latest", "download_latest", show=True, priority=True),
         # Binding("c", "change_version", "change_version", show=True, priority=True),
     ]
 
@@ -43,6 +43,7 @@ class ModManagerView(DataTable):
         self.__column_fields = {
             # "app_name": "AppName",
             "description": "Description",
+            "installed": "Installed",
             "patched": "Patched",
             "tag_name": "Current Version                   ",
             "latest_version_available": "Latest Version Available",  # Or Up to date
@@ -87,19 +88,30 @@ class ModManagerView(DataTable):
 
     def action_update_to_latest(self):
         app = self.selected_app
-        # self.show_cursor = not self.show_cursor
         # TODO try except: show error window
         # TODO set rate limit
         try:
             app.update_to(release=app.latest_release)
-            self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date"])
+            self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
 
         except Exception as e:
             raise e
 
-    def action_download_latest(self):
+    def action_patch_app(self):
         app = self.selected_app
-        app.download_app(self.config.app_download_path, app.latest_release)
+        # TODO try except: show error window
+        # TODO maybe skipp if already patched?
+        if app.is_installed:
+            try:
+                app.patch()
+                self.__update_set_values(rows=app.app_name, columns=["patched"])
+
+            except Exception as e:
+                raise e
+
+    # def action_download_latest(self):
+    #     app = self.selected_app
+    #     app.download_release(app.latest_release)
 
     def __update_set_values(self, columns: str | [str] = None, rows: str | [str] = None) -> None:
         if columns is str:
@@ -124,7 +136,8 @@ class ModManagerView(DataTable):
                 "tag_name": app.tag_name,
                 "latest_version_available": app.latest_release_name,
                 # "latest_version_available": latest_release.name,
-                "patched": (NO, TRUE)[app.patched],
+                "installed": (NO, TRUE)[app.is_installed],
+                "patched": (NO, TRUE)[app.is_patched],
                 "description": app.description,
                 "up_to_date": (NO, TRUE)[app.up_to_date]
             }

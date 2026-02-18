@@ -1,24 +1,31 @@
 import dataclasses
 import json
 import os.path
+import platform
+import sys
 from json import JSONEncoder
 from zipfile import ZipFile
 
 from github import Github, GitRelease
 from github.GitReleaseAsset import GitReleaseAsset
 
+from abc import ABC, abstractmethod, abstractproperty
+
+
+# from Config import GlobalConfig
+
 
 @dataclasses.dataclass
-class AppStruct:
+class AppStruct(ABC):
+    _config: object
     repo_owner: str
     repo_name: str
-    id: str | None = None
+    release_id: str | None = None
     tag_name: str | None = None
     published_at: str | None = None
     # app_type: str # Shouldn't be necessary/helpful.
     url_source_release: str | None = None
     # automatically_patch: bool = None
-    patched: bool = False
     enabled: bool = False  # IDK
     hidden: bool = False
     # release_available: [GitRelease] = None
@@ -68,17 +75,26 @@ class AppStruct:
         # If linux
         # if Windows
         # Else
-        linux = False
-        windows = False
-        if linux:
-            ...
-        elif windows:
-            ...
-        else:
-            raise NotImplementedError
+        match sys.platform:
+            case "linux":
+                self._patch_linux()
+            case "win32" | "cygwin":
+                self._patch_linux()
+            case _:
+                raise NotImplementedError
+
+    @abstractmethod
+    def _patch_linux(self):
+        pass
+
+    @abstractmethod
+    def _patch_windows(self):
+        pass
 
     def update_to(self, release: GitRelease):
-        pass
+        self.download_release(self.latest_release)
+        self.published_at = release.published_at
+        self.url_source_release = release.url
         self.tag_name = release.tag_name
         # raise Exception(self.tag_name)
         return True
@@ -86,11 +102,10 @@ class AppStruct:
 
     def export_config_dict(self) -> {str: str | int | None | bool}:
         return {
-            "id": self.id,
+            "release_id": self.release_id,
             "tag_name": self.tag_name,
-            "published_at": self.published_at,
+            # "published_at": self.published_at,
             "url_source_release": self.url_source_release,
-            "patched": self.patched,
             "enabled": self.enabled,
             "hidden": self.hidden,
         }
@@ -101,14 +116,15 @@ class AppStruct:
             return True
         return False
 
-    def download_app(self, path: str, release: GitRelease):
+    def download_release(self, release: GitRelease):
         """Download the mod/app files"""
-        self.__download_app(path=path, release=release)
+        self.__download_app(release=release)
 
-    def __download_app(self, path: str, release: GitRelease) -> None:
+    def __download_app(self, release: GitRelease) -> None:
         files_to_download: [GitReleaseAsset] = []
-        assets_whitelist = self.get_assets_whitelist(release=release)
-        app_download_folder_path = "{}/{}/{}".format(path, self.app_name.replace("/", "_"), release.tag_name)
+        assets_whitelist = self._get_assets_whitelist(release=release)
+        release_download_folder_path = "{}/{}/{}".format(self._config.app_download_path,
+                                                         self.app_name.replace("/", "_"), release.tag_name)
 
         release: GitRelease
         for asset in release.assets:
@@ -124,23 +140,27 @@ class AppStruct:
                     [asset.name for asset in release.assets])
             )
         # Check download folder exists
-        if not os.path.exists(path=app_download_folder_path):
-            os.makedirs(app_download_folder_path, exist_ok=True)
-        elif not os.path.isdir(app_download_folder_path):
-            raise Exception("Downloads path ({}) is occupied by a file".format(app_download_folder_path))
+        if not os.path.exists(path=release_download_folder_path):
+            os.makedirs(release_download_folder_path, exist_ok=True)
+        elif not os.path.isdir(release_download_folder_path):
+            raise Exception("Downloads path ({}) is occupied by a file".format(release_download_folder_path))
 
         for asset in files_to_download:
             asset: GitReleaseAsset
-            asset.download_asset(path=f"{app_download_folder_path}/{asset.name}")
+            asset.download_asset(path=f"{release_download_folder_path}/{asset.name}")
 
         # For each zip unzip
         for file in files_to_download:
             if file.name.endswith(".zip"):
-                with ZipFile(f"{app_download_folder_path}/{file.name}") as z:
-                    z.extractall(path=app_download_folder_path)
+                with ZipFile(f"{release_download_folder_path}/{file.name}") as z:
+                    z.extractall(path=release_download_folder_path)
                     # TODO only extract desired files
 
-    def get_assets_whitelist(self, release: GitRelease) -> [str]:
+    def get_assets_whitelist(self, release: GitRelease):
+        self.get_assets_whitelist(release=release)
+
+    @abstractmethod
+    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
         raise NotImplementedError("_download_app for app {}".format(self.__class__))
 
     def launch(self):
@@ -149,21 +169,101 @@ class AppStruct:
         else:
             raise Exception("Can't be launched")
 
+    @abstractmethod
+    def _launch(self):
+        pass
+
+    @property
+    def is_installed(self) -> bool:
+        return self._is_installed
+
+    @property
+    @abstractmethod
+    def _is_installed(self) -> bool:
+        """
+        Returns if the app is installed or not.
+        What "installed" means is a bit loose, but most of the time will be checking if X files are at Z place.
+        :return:
+        """
+        pass
+
+    @property
+    def is_patched(self) -> bool:
+        return self._is_installed
+
+    @property
+    @abstractmethod
+    def _is_patched(self) -> bool:
+        pass
+
+    def can_be_launched(self) -> bool:
+        return self.is_installed or self._can_be_launched
+
+
+class GenericApp(AppStruct):
+    def _patch_windows(self):
+        raise NotImplementedError("_patch_windows for app {}".format(self.__class__))
+
+    def _patch_linux(self):
+        raise NotImplementedError("_patch_linux for app {}".format(self.__class__))
+
     def _launch(self):
         raise NotImplementedError("_launch for app {}".format(self.__class__))
 
     @property
-    def installed(self) -> bool:
-        return any(self.tag_name)
+    def _is_patched(self) -> bool:
+        raise NotImplementedError("_is_patched for app {}".format(self.__class__))
 
-    def can_be_launched(self) -> bool:
-        return self.installed or self._can_be_launched
+    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+        raise NotImplementedError("_download_app for app {}".format(self.__class__))
+
+    @property
+    def _is_installed(self):
+        return any(self.tag_name)
 
 
 class WakeUpTool(AppStruct):
     _can_be_launched = True
 
-    def get_assets_whitelist(self, release: GitRelease) -> [str]:
+    def _patch_windows(self):
+        """No need to patch"""
+        raise NotImplementedError("_patch_windows for app {}".format(self.__class__))
+
+    def _patch_linux(self):
+        """No need to patch"""
+        pass
+
+    def _launch(self):
+        raise NotImplementedError("_launch for app {}".format(self.__class__))
+
+    @property
+    def _is_patched(self) -> bool:
+        """
+        Doesn't need to patch, if it's installed is patched :thumbsup:
+        :return:
+        """
+        return self.is_installed
+
+    @property
+    def _is_installed(self) -> bool:
+        """
+        Wakeup tool only needs a few files.
+
+        :return: True if all files exists.
+        False if any is missing.
+        """
+        files_to_find = ["GGXrdReversalTool.exe"]
+
+        release_download_folder_path = "{}/{}/{}".format(self._config.app_download_path,
+                                                         self.app_name.replace("/", "_"), self.tag_name)
+
+        for file in files_to_find:
+            if not os.path.isfile(f"{release_download_folder_path}/{file}"):
+                return False
+
+        return True
+
+    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
         assets_whitelist = ["GGXrdReversalTool.{}.zip".format(release.tag_name),
                             "GGXrdReversalTool-{}.zip".format(release.tag_name)]
 

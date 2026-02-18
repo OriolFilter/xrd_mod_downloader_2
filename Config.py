@@ -1,10 +1,10 @@
-from modClasses import *
+from modClasses import AppStruct, WakeUpTool
 import os
 import json
 
 
 class GlobalConfig:
-    mod_list: list[AppStruct,WakeUpTool]
+    mod_list: list[AppStruct]
     mod_dict: {
         'str': AppStruct
     } = {}
@@ -13,17 +13,17 @@ class GlobalConfig:
         mod_list = [
             # AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots", description="Hitbox/framedata viewer "
             #                                                                                  "mod"),
-            WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots"),
-            # AppStruct(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", enabled=True),
-            # AppStruct(repo_name="GGXrdMirrorColorSelect", repo_owner="kkots"),
-            # AppStruct(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots"),
-            # AppStruct(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19"),
+            WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
+            # AppStruct(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", enabled=True, _config=self),
+            # AppStruct(repo_name="GGXrdMirrorColorSelect", repo_owner="kkots", _config=self),
+            # AppStruct(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots", _config=self),
+            # AppStruct(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
         ]
 
         for mod in mod_list:
             mod: AppStruct
             # print(mod.app_name)
-            if not mod.app_name in self.mod_dict:
+            if mod.app_name not in self.mod_dict:
                 self.mod_dict[mod.app_name] = mod
                 # print(self.mod_dict.get(mod.app_name).enabled)
 
