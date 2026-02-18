@@ -26,8 +26,8 @@ class AppStruct(ABC):
     # app_type: str # Shouldn't be necessary/helpful.
     url_source_release: str | None = None
     # automatically_patch: bool = None
-    enabled: bool = False  # IDK
-    hidden: bool = False
+    # enabled: bool = False  # IDK
+    # hidden: bool = False
     # release_available: [GitRelease] = None
     # track_updates: bool = False
     # tracked: bool = False
@@ -106,8 +106,8 @@ class AppStruct(ABC):
             "tag_name": self.tag_name,
             # "published_at": self.published_at,
             "url_source_release": self.url_source_release,
-            "enabled": self.enabled,
-            "hidden": self.hidden,
+            # "enabled": self.enabled,
+            # "hidden": self.hidden,
         }
 
     @property
