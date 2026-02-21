@@ -1,5 +1,5 @@
 name: Package Application with Pyinstaller
-on: []
+on: workflow_dispatch
 
 jobs:
   build:
