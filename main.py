@@ -45,26 +45,30 @@ class TabbedApp(App):
         """Compose app with tabbed content."""
         # Footer to show keys
         yield Footer()
+        yield ModManagerView(zebra_stripes=True, config=globalConfig, cursor_type="row",
+                             cursor_foreground_priority="renderable",
+                             # cursor_background_priority="renderable"
+                             )
 
-        # Add the TabbedContent widget
-        self.tabs_menu = TabbedContent(initial="mods_info")
-        with self.tabs_menu:
-            with TabPane("Display Mods Info", id="mods_info"):  # First tab
-                # yield AppDataTable(zebra_stripes=True, cursor_type="row", config=globalConfig)
-                yield ModManagerView(zebra_stripes=True, config=globalConfig, cursor_type="row",
-                                     cursor_foreground_priority="renderable",
-                                     # cursor_background_priority="renderable"
-                                     )
-                # yield ModManagerView(zebra_stripes=True, cursor_type="row", config=globalConfig)
-                # yield Markdown(LETO)  # Tab content
-            # with TabPane("Toggle Mod Display", id="toggle_mods_display"):
-            #     yield Markdown(JESSICA)
-
-            with TabPane("Others", id="Others"):
-                yield Markdown("# TODO\n## TODO TODO\n### TODO TODO TODO")
-                with TabbedContent("Paul", "Alia"):
-                    yield TabPane("Paul", Label("First child"))
-                    yield TabPane("Alia", Label("Second child"))
+        # # Add the TabbedContent widget
+        # self.tabs_menu = TabbedContent(initial="mods_info")
+        # with self.tabs_menu:
+        #     with TabPane("Display Mods Info", id="mods_info"):  # First tab
+        #         # yield AppDataTable(zebra_stripes=True, cursor_type="row", config=globalConfig)
+        #         yield ModManagerView(zebra_stripes=True, config=globalConfig, cursor_type="row",
+        #                              cursor_foreground_priority="renderable",
+        #                              # cursor_background_priority="renderable"
+        #                              )
+        #         # yield ModManagerView(zebra_stripes=True, cursor_type="row", config=globalConfig)
+        #         # yield Markdown(LETO)  # Tab content
+        #     # with TabPane("Toggle Mod Display", id="toggle_mods_display"):
+        #     #     yield Markdown(JESSICA)
+        #
+        #     with TabPane("Others", id="Others"):
+        #         yield Markdown("# TODO\n## TODO TODO\n### TODO TODO TODO")
+        #         with TabbedContent("Paul", "Alia"):
+        #             yield TabPane("Paul", Label("First child"))
+        #             yield TabPane("Alia", Label("Second child"))
             # with TabPane("Download/Update mods", id="download_mods"):
             #     yield Markdown(PAUL)
             #     with TabbedContent("Paul", "Alia"):
