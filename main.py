@@ -1,6 +1,5 @@
 from textual.app import App, ComposeResult, Binding
 from textual.widgets import Footer, Label, Markdown, TabbedContent, TabPane
-from ListModsView import AppDataTable
 from Config import GlobalConfig
 from modManagerView import ModManagerView
 

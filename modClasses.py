@@ -6,7 +6,7 @@ import sys
 from json import JSONEncoder
 from zipfile import ZipFile
 
-from github import Github, GitRelease
+from github import GitRelease
 from github.GitReleaseAsset import GitReleaseAsset
 
 from abc import ABC, abstractmethod, abstractproperty
@@ -53,16 +53,14 @@ class AppStruct(ABC):
 
     @property
     def latest_release(self) -> GitRelease:
-        cli = Github()
         if not self.__latest_release_available:
-            self.__latest_release_available = cli.get_repo(self.app_name).get_latest_release()
+            self.__latest_release_available = self._config.github_client.get_repo(self.app_name).get_latest_release()
         return self.__latest_release_available
 
     @property
     def latest_release_name(self) -> str:
-        cli = Github()
         if not self.__latest_release_available:
-            self.__latest_release_available = cli.get_repo(self.app_name).get_latest_release()
+            self.__latest_release_available = self._config.github_client.get_repo(self.app_name).get_latest_release()
         return self.__latest_release_available.tag_name
 
     # def __patch_windows(self):
@@ -219,7 +217,7 @@ class GenericApp(AppStruct):
 
     @property
     def _is_installed(self):
-        return any(self.tag_name)
+        return False
 
 
 class WakeUpTool(AppStruct):
@@ -227,7 +225,7 @@ class WakeUpTool(AppStruct):
 
     def _patch_windows(self):
         """No need to patch"""
-        raise NotImplementedError("_patch_windows for app {}".format(self.__class__))
+        pass
 
     def _patch_linux(self):
         """No need to patch"""
@@ -271,3 +269,41 @@ class WakeUpTool(AppStruct):
 
     def _install(self):
         pass
+
+
+class ReplayTakeover(AppStruct):
+    def _patch_linux(self):
+        pass
+
+    def _patch_windows(self):
+        pass
+
+    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+        assets_whitelist = ["GGXrdReplayTakeover.zip".format(release.tag_name)]
+        return assets_whitelist
+
+    def _launch(self):
+        pass
+
+    @property
+    def _is_installed(self) -> bool:
+        """
+        Replay takeover only needs a few files.
+
+        :return: True if all files exists.
+        False if any is missing.
+        """
+        files_to_find = ["GGXrdReplayTakeoverInjector.exe", "GGXrdReplayTakeover.dll"]
+
+        release_download_folder_path = "{}/{}/{}".format(self._config.app_download_path,
+                                                         self.app_name.replace("/", "_"), self.tag_name)
+
+        for file in files_to_find:
+            if not os.path.isfile(f"{release_download_folder_path}/{file}"):
+                return False
+
+        return True
+
+    @property
+    def _is_patched(self) -> bool:
+        return False

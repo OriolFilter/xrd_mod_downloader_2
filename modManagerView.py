@@ -45,8 +45,8 @@ class ModManagerView(DataTable):
             "description": "Description",
             "installed": "Installed",
             "patched": "Patched",
-            "tag_name": "Current Version                   ",
-            "latest_version_available": "Latest Version Available",  # Or Up to date
+            "tag_name": " Current ",
+            "latest_version_available": " Latest ",  # Or Up to date
             "up_to_date": "Up To Date",
         }
 

@@ -1,4 +1,6 @@
-from modClasses import AppStruct, WakeUpTool
+from github import Github
+
+from modClasses import AppStruct, WakeUpTool, GenericApp, ReplayTakeover
 import os
 import json
 
@@ -8,16 +10,20 @@ class GlobalConfig:
     mod_dict: {
         'str': AppStruct
     } = {}
+    github_client: Github
 
     def __init__(self):
         mod_list = [
             # AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots", description="Hitbox/framedata viewer "
             #                                                                                  "mod"),
             WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
-            # AppStruct(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", enabled=True, _config=self),
+            ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
+            # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self),
+            # #Iquis would need to verify download differenlty
+
+            # AppStruct(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", _config=self),
             # AppStruct(repo_name="GGXrdMirrorColorSelect", repo_owner="kkots", _config=self),
             # AppStruct(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots", _config=self),
-            # AppStruct(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
         ]
 
         for mod in mod_list:
@@ -26,6 +32,8 @@ class GlobalConfig:
             if mod.app_name not in self.mod_dict:
                 self.mod_dict[mod.app_name] = mod
                 # print(self.mod_dict.get(mod.app_name).enabled)
+
+        self.github_client = Github()
 
     @property
     def mod_list(self) -> list[AppStruct]:
@@ -70,7 +78,7 @@ class GlobalConfig:
                         if hasattr(app, key):
                             app.__setattr__(key, value)
                         else:
-                            print(f"> Field for app {app_name} couldn't load due to not matching a variable. Skipping.")
+                            print(f"> Field '{key}' for app {app_name} couldn't load due to not matching a variable. Skipping.")
                 else:
                     print(f"> Config for app {app_name} couldn't load due to not matching any app by name. Skipping.")
 
