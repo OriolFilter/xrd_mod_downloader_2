@@ -2,6 +2,7 @@ from textual.app import App, ComposeResult, Binding
 from textual.widgets import Footer, Label, Markdown, TabbedContent, TabPane
 from Config import GlobalConfig
 from modManagerView import ModManagerView
+import textual
 
 LETO = """
 # Duke Leto I Atreides
