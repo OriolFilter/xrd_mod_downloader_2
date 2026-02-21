@@ -288,7 +288,9 @@ class ReplayTakeover(AppStruct):
     @property
     def _is_installed(self) -> bool:
         """
-        Replay takeover only needs a few files.
+        Replay Takeover:
+         - Check if dll and exe is in local folder.
+         - Check if dll is in XRD folder and equal to the one in the download folder. # TODO
 
         :return: True if all files exists.
         False if any is missing.
@@ -301,7 +303,6 @@ class ReplayTakeover(AppStruct):
         for file in files_to_find:
             if not os.path.isfile(f"{release_download_folder_path}/{file}"):
                 return False
-
         return True
 
     @property
