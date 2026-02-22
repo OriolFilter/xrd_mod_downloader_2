@@ -8,4 +8,5 @@ if __name__ == "__main__":
     globalConfig = GlobalConfig()
     print(f"Found existing config? {globalConfig.load_config()}")
     app = ModManagerApp(config=globalConfig)
+    print(app.debug)
     app.run(inline=True)

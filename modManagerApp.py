@@ -1,4 +1,7 @@
+import asyncio
 import time
+from asyncio import Task
+from os import system
 
 from rich.text import TextType, Text
 from textual.app import App, ComposeResult, Binding
@@ -6,7 +9,7 @@ from textual.widgets import DataTable, Footer
 
 from Config import GlobalConfig
 from modClasses import AppStruct
-from textual import log
+from textual import log, work
 from textual.widgets import LoadingIndicator
 
 NO = Text("No", style="#a83a32 bold")
@@ -103,16 +106,30 @@ class ModManagerApp(App):
     #     except Exception as e:
     #         raise e
 
-    def action_update_to_latest(self):
-        app = self.selected_app
+    async def action_update_to_latest(self):
+        # self.get_loading_widget()
+        self.table.loading = True
+        # with self.suspend():
+        #     system("vim")
+        # with self.suspend():
         # TODO try except: show error window
         # TODO set rate limit
-        try:
-            app.update_to(release=app.latest_release)
-            self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
+        # self.run_worker(self.__update_app(self.selected_app), exclusive=True)
+        self.__update_app()
 
-        except Exception as e:
-            raise e
+    @work(exclusive=True)
+    async def __update_app(self):
+        app = self.selected_app
+        # await asyncio.sleep(5)
+        async with asyncio.TaskGroup() as tg:
+            self.notify("Started download!", severity="warning")
+            download = tg.create_task(app.download_release(release=app.latest_release))
+        if download.result() is False:
+            self.notify("Failed to download the mod!", severity="error")
+        else:
+            self.notify("Download completed!", severity="information")
+            self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
+        self.table.loading = False
 
     def action_patch_app(self):
         app = self.selected_app

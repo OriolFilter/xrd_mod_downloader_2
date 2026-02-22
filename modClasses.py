@@ -1,8 +1,10 @@
+import asyncio
 import dataclasses
 import json
 import os.path
 import platform
 import sys
+import time
 from json import JSONEncoder
 from zipfile import ZipFile
 
@@ -79,7 +81,8 @@ class AppStruct(ABC):
             case "win32" | "cygwin":
                 self._patch_linux()
             case _:
-                raise NotImplementedError
+                raise NotImplementedError(f"Platform '{sys.platform}' not supported, reach out to the owners if you "
+                                          f"want you device to be implemented.")
 
     @abstractmethod
     def _patch_linux(self):
@@ -89,14 +92,26 @@ class AppStruct(ABC):
     def _patch_windows(self):
         pass
 
-    def update_to(self, release: GitRelease):
-        self.download_release(self.latest_release)
+    # def update_to(self, release: GitRelease) -> bool:
+    #     self.download_release(release)
+    #     return True
+    #     # raise NotImplementedError
+
+    def install_release(self, release: GitRelease) -> bool:
+        """
+        The process of moving/replacing files, or changes required after having downloaded the mod/files locally.
+        :param release:
+        :return:
+        """
+        self._install_release(release)
         self.published_at = release.published_at
         self.url_source_release = release.url
         self.tag_name = release.tag_name
-        # raise Exception(self.tag_name)
         return True
-        # raise NotImplementedError
+
+    @abstractmethod
+    def _install_release(self, release: GitRelease):
+        pass
 
     def export_config_dict(self) -> {str: str | int | None | bool}:
         return {
@@ -114,11 +129,14 @@ class AppStruct(ABC):
             return True
         return False
 
-    def download_release(self, release: GitRelease):
+    async def download_release(self, release: GitRelease):
         """Download the mod/app files"""
-        self.__download_app(release=release)
+        await asyncio.sleep(2)
+        await self.__download_app(release=release)
+        return True
+        # await asyncio.sleep(5)
 
-    def __download_app(self, release: GitRelease) -> None:
+    async def __download_app(self, release: GitRelease) -> None:
         files_to_download: [GitReleaseAsset] = []
         assets_whitelist = self._get_assets_whitelist(release=release)
         release_download_folder_path = "{}/{}/{}".format(self._config.app_download_path,
@@ -147,7 +165,7 @@ class AppStruct(ABC):
             asset: GitReleaseAsset
             asset.download_asset(path=f"{release_download_folder_path}/{asset.name}")
 
-        # For each zip unzip
+        # # For each zip unzip
         for file in files_to_download:
             if file.name.endswith(".zip"):
                 with ZipFile(f"{release_download_folder_path}/{file.name}") as z:
@@ -199,6 +217,9 @@ class AppStruct(ABC):
 
 
 class GenericApp(AppStruct):
+    def _install_release(self, release: GitRelease):
+        pass
+
     def _patch_windows(self):
         raise NotImplementedError("_patch_windows for app {}".format(self.__class__))
 
@@ -221,6 +242,9 @@ class GenericApp(AppStruct):
 
 
 class WakeUpTool(AppStruct):
+    def _install_release(self, release: GitRelease):
+        pass
+
     _can_be_launched = True
 
     def _patch_windows(self):
@@ -272,6 +296,9 @@ class WakeUpTool(AppStruct):
 
 
 class ReplayTakeover(AppStruct):
+    def _install_release(self, release: GitRelease):
+        pass
+
     def _patch_linux(self):
         pass
 
