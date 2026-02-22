@@ -107,7 +107,7 @@ class AppStruct(ABC):
         self.published_at = release.published_at
         self.url_source_release = release.url
         self.tag_name = release.tag_name
-        await asyncio.sleep(3)
+        # await asyncio.sleep(3)
         return True
 
 
@@ -134,7 +134,7 @@ class AppStruct(ABC):
     async def download_release(self, release: GitRelease) -> None:
         """Download the mod/app files"""
         await self.__download_app(release=release)
-        await asyncio.sleep(3)
+        # await asyncio.sleep(3)
 
     async def __download_app(self, release: GitRelease) -> None:
         files_to_download: [GitReleaseAsset] = []

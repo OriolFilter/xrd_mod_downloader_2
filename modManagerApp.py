@@ -28,10 +28,11 @@ class ModManagerApp(App):
     __column_fields: {str: str} = None
 
     BINDINGS = [
-        Binding("u", "update_app_to_latest", "update_to_latest", show=True, priority=True),
+        Binding("u", "update_app_to_latest", "update_to_latest", show=True),
         # Binding("p", "patch_app", "patch", show=True, priority=True),
         # Binding("i", "search_updates", "search_updates", show=True, priority=True), # Checks on boot
-        Binding("s", "save_config", "save", show=True, priority=True),
+        Binding("s", "save_config", "save", show=True),
+        Binding("l", "launch_mod", "launch", show=True),
         # Binding("f", "download_latest", "download_latest", show=True, priority=True),
         # Binding("c", "change_version", "change_version", show=True, priority=True),
     ]
