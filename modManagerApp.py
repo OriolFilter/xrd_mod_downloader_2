@@ -3,6 +3,7 @@ import time
 from asyncio import Task
 from os import system
 
+from github.GitRelease import GitRelease
 from rich.text import TextType, Text
 from textual.app import App, ComposeResult, Binding
 from textual.widgets import DataTable, Footer
@@ -27,8 +28,8 @@ class ModManagerApp(App):
     __column_fields: {str: str} = None
 
     BINDINGS = [
-        Binding("u", "update_to_latest", "update_to_latest", show=True, priority=True),
-        Binding("p", "patch_app", "patch", show=True, priority=True),
+        Binding("u", "update_app_to_latest", "update_to_latest", show=True, priority=True),
+        # Binding("p", "patch_app", "patch", show=True, priority=True),
         # Binding("i", "search_updates", "search_updates", show=True, priority=True), # Checks on boot
         Binding("s", "save_config", "save", show=True, priority=True),
         # Binding("f", "download_latest", "download_latest", show=True, priority=True),
@@ -90,6 +91,7 @@ class ModManagerApp(App):
                                cursor_foreground_priority="renderable",
                                # cursor_background_priority="renderable"
                                )
+        self.table.styles.min_height = 10
         yield Footer()
 
         yield self.table
@@ -106,7 +108,7 @@ class ModManagerApp(App):
     #     except Exception as e:
     #         raise e
 
-    async def action_update_to_latest(self):
+    async def action_update_app_to_latest(self):
         # self.get_loading_widget()
         self.table.loading = True
         # with self.suspend():
@@ -115,33 +117,59 @@ class ModManagerApp(App):
         # TODO try except: show error window
         # TODO set rate limit
         # self.run_worker(self.__update_app(self.selected_app), exclusive=True)
-        self.__update_app()
+        self.__update_app_to_release(app=self.selected_app)
 
     @work(exclusive=True)
-    async def __update_app(self):
-        app = self.selected_app
-        # await asyncio.sleep(5)
+    async def __update_app_to_release(self, app: AppStruct, release: GitRelease = None):
+        """
+        Calls download and install methods from the app class.
+
+        If no release is given, it will update to latest.
+
+        Notify through the process.
+        :return:
+        """
+
+        if release is None:
+            release = app.latest_release
+        # TODO check if its already download, skipp download if exists
+        self.notify(f"Starting download.\nApp: {app.app_name}\nRelease: {release.name}",
+                    severity="warning")
         async with asyncio.TaskGroup() as tg:
-            self.notify("Started download!", severity="warning")
-            download = tg.create_task(app.download_release(release=app.latest_release))
-        if download.result() is False:
+            download = tg.create_task(app.download_release(release=release))
+
+        if not download.done():
+            # No clue under which circumstances this would occur but whatever
             self.notify("Failed to download the mod!", severity="error")
-        else:
-            self.notify("Download completed!", severity="information")
-            self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
+            self.table.loading = False
+            return 0
+        self.notify("Download completed.\nStarting install step.", severity="information")
+
+        async with asyncio.TaskGroup() as tg:
+            install = tg.create_task(app.install_release(release=release))
+        #
+        # if not install.done():
+        #     # No clue under which circumstances this would occur but whatever
+        #     self.notify("Failed to download the mod!", severity="error")
+        #     self.table.loading = False
+        #     return 0
+
+        self.notify(f"Mod {app.app_name} installed.")
+
+        self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
         self.table.loading = False
 
-    def action_patch_app(self):
-        app = self.selected_app
-        # TODO try except: show error window
-        # TODO maybe skipp if already patched?
-        if app.is_installed:
-            try:
-                app.patch()
-                self.__update_set_values(rows=app.app_name, columns=["patched"])
-
-            except Exception as e:
-                raise e
+    # def action_patch_app(self):
+    #     app = self.selected_app
+    #     # TODO try except: show error window
+    #     # TODO maybe skipp if already patched?
+    #     if app.is_installed:
+    #         try:
+    #             app.patch()
+    #             self.__update_set_values(rows=app.app_name, columns=["patched"])
+    #
+    #         except Exception as e:
+    #             raise e
 
     # def action_download_latest(self):
     #     app = self.selected_app
@@ -171,7 +199,7 @@ class ModManagerApp(App):
                 "latest_version_available": app.latest_release_name,
                 # "latest_version_available": latest_release.name,
                 "installed": (NO, TRUE)[app.is_installed],
-                "patched": (NO, TRUE)[app.is_patched],
+                # "patched": (NO, TRUE)[app.is_patched],
                 "description": app.description,
                 "up_to_date": (NO, TRUE)[app.up_to_date]
             }

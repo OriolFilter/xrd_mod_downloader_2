@@ -71,33 +71,33 @@ class AppStruct(ABC):
     # def __patch_linux(self):
     #     raise NotImplementedError
 
-    def patch(self):
-        # If linux
-        # if Windows
-        # Else
-        match sys.platform:
-            case "linux":
-                self._patch_linux()
-            case "win32" | "cygwin":
-                self._patch_linux()
-            case _:
-                raise NotImplementedError(f"Platform '{sys.platform}' not supported, reach out to the owners if you "
-                                          f"want you device to be implemented.")
+    # def patch(self):
+    #     # If linux
+    #     # if Windows
+    #     # Else
+    #     match sys.platform:
+    #         case "linux":
+    #             self._patch_linux()
+    #         case "win32" | "cygwin":
+    #             self._patch_linux()
+    #         case _:
+    #             raise NotImplementedError(f"Platform '{sys.platform}' not supported, reach out to the owners if you "
+    #                                       f"want you device to be implemented.")
 
-    @abstractmethod
-    def _patch_linux(self):
-        pass
-
-    @abstractmethod
-    def _patch_windows(self):
-        pass
+    # @abstractmethod
+    # def _patch_linux(self):
+    #     pass
+    #
+    # @abstractmethod
+    # def _patch_windows(self):
+    #     pass
 
     # def update_to(self, release: GitRelease) -> bool:
     #     self.download_release(release)
     #     return True
     #     # raise NotImplementedError
 
-    def install_release(self, release: GitRelease) -> bool:
+    async def install_release(self, release: GitRelease) -> bool:
         """
         The process of moving/replacing files, or changes required after having downloaded the mod/files locally.
         :param release:
@@ -107,7 +107,9 @@ class AppStruct(ABC):
         self.published_at = release.published_at
         self.url_source_release = release.url
         self.tag_name = release.tag_name
+        await asyncio.sleep(3)
         return True
+
 
     @abstractmethod
     def _install_release(self, release: GitRelease):
@@ -129,12 +131,10 @@ class AppStruct(ABC):
             return True
         return False
 
-    async def download_release(self, release: GitRelease):
+    async def download_release(self, release: GitRelease) -> None:
         """Download the mod/app files"""
-        await asyncio.sleep(2)
         await self.__download_app(release=release)
-        return True
-        # await asyncio.sleep(5)
+        await asyncio.sleep(3)
 
     async def __download_app(self, release: GitRelease) -> None:
         files_to_download: [GitReleaseAsset] = []
@@ -203,14 +203,14 @@ class AppStruct(ABC):
         """
         pass
 
-    @property
-    def is_patched(self) -> bool:
-        return self._is_installed
+    # @property
+    # def is_patched(self) -> bool:
+    #     return self._is_installed
 
-    @property
-    @abstractmethod
-    def _is_patched(self) -> bool:
-        pass
+    # @property
+    # @abstractmethod
+    # def _is_patched(self) -> bool:
+    #     pass
 
     def can_be_launched(self) -> bool:
         return self.is_installed or self._can_be_launched
@@ -220,18 +220,18 @@ class GenericApp(AppStruct):
     def _install_release(self, release: GitRelease):
         pass
 
-    def _patch_windows(self):
-        raise NotImplementedError("_patch_windows for app {}".format(self.__class__))
-
-    def _patch_linux(self):
-        raise NotImplementedError("_patch_linux for app {}".format(self.__class__))
+    # def _patch_windows(self):
+    #     raise NotImplementedError("_patch_windows for app {}".format(self.__class__))
+    #
+    # def _patch_linux(self):
+    #     raise NotImplementedError("_patch_linux for app {}".format(self.__class__))
 
     def _launch(self):
         raise NotImplementedError("_launch for app {}".format(self.__class__))
 
-    @property
-    def _is_patched(self) -> bool:
-        raise NotImplementedError("_is_patched for app {}".format(self.__class__))
+    # @property
+    # def _is_patched(self) -> bool:
+    #     raise NotImplementedError("_is_patched for app {}".format(self.__class__))
 
     def _get_assets_whitelist(self, release: GitRelease) -> [str]:
         raise NotImplementedError("_download_app for app {}".format(self.__class__))
@@ -247,24 +247,24 @@ class WakeUpTool(AppStruct):
 
     _can_be_launched = True
 
-    def _patch_windows(self):
-        """No need to patch"""
-        pass
-
-    def _patch_linux(self):
-        """No need to patch"""
-        pass
+    # def _patch_windows(self):
+    #     """No need to patch"""
+    #     pass
+    #
+    # def _patch_linux(self):
+    #     """No need to patch"""
+    #     pass
 
     def _launch(self):
         raise NotImplementedError("_launch for app {}".format(self.__class__))
 
-    @property
-    def _is_patched(self) -> bool:
-        """
-        Doesn't need to patch, if it's installed is patched :thumbsup:
-        :return:
-        """
-        return self.is_installed
+    # @property
+    # def _is_patched(self) -> bool:
+    #     """
+    #     Doesn't need to patch, if it's installed is patched :thumbsup:
+    #     :return:
+    #     """
+    #     return self.is_installed
 
     @property
     def _is_installed(self) -> bool:
@@ -299,11 +299,11 @@ class ReplayTakeover(AppStruct):
     def _install_release(self, release: GitRelease):
         pass
 
-    def _patch_linux(self):
-        pass
-
-    def _patch_windows(self):
-        pass
+    # def _patch_linux(self):
+    #     pass
+    #
+    # def _patch_windows(self):
+    #     pass
 
     def _get_assets_whitelist(self, release: GitRelease) -> [str]:
         assets_whitelist = ["GGXrdReplayTakeover.zip".format(release.tag_name)]
@@ -332,6 +332,6 @@ class ReplayTakeover(AppStruct):
                 return False
         return True
 
-    @property
-    def _is_patched(self) -> bool:
-        return False
+    # @property
+    # def _is_patched(self) -> bool:
+    #     return False
