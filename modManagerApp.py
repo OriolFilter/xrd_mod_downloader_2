@@ -2,11 +2,12 @@ import time
 
 from rich.text import TextType, Text
 from textual.app import App, ComposeResult, Binding
-from textual.widgets import DataTable
+from textual.widgets import DataTable, Footer
 
 from Config import GlobalConfig
 from modClasses import AppStruct
 from textual import log
+from textual.widgets import LoadingIndicator
 
 NO = Text("No", style="#a83a32 bold")
 FALSE = NO
@@ -15,8 +16,9 @@ TRUE = YES
 UNKNOWN = Text("?", style="#d8db23 bold")
 
 
-class ModManagerView(DataTable):
+class ModManagerApp(App):
     config: GlobalConfig
+    table: DataTable
     # table_struct: {str: {str: str}} = None
 
     __column_fields: {str: str} = None
@@ -33,7 +35,7 @@ class ModManagerView(DataTable):
     # { field/key: display_name }
     @property
     def selected_app(self) -> AppStruct:
-        row_pos = self.coordinate_to_cell_key(self.cursor_coordinate)[0]
+        row_pos = self.table.coordinate_to_cell_key(self.table.cursor_coordinate)[0]
         # {'value': 'kkots/GGXrdBackgroundGamepad'}
         row_key = row_pos.value
         return self.config.get_app(row_key)
@@ -53,29 +55,44 @@ class ModManagerView(DataTable):
         super().__init__(*args, **kwargs)
 
     def on_mount(self) -> None:
+
+        # self.table.zebra_stripes = True
+        # self.cursor_type = "row"
+        # self.cursor_foreground_priority = "renderable"
+
         # Add columns
         for key, column in self.__column_fields.items():
             print(f"key {key}")
             print(f"column {column}")
-            self.add_column(Text(str(column)), key=key, default='----')
+            self.table.add_column(Text(str(column)), key=key, default='----')
 
         # Add rows
         for mod in self.config.mod_list:
             mod: AppStruct
-            self.add_row(
+            self.table.add_row(
                 *(),
                 key=mod.app_name,
                 label=mod.app_name,
             )
 
         self.__update_set_values()
-        # self.show_cursor = False
+        # self.table.show_cursor = False
 
     # def action_search_updates_app(self):
     #     pass
 
+    def compose(self) -> ComposeResult:
+        # Footer to show keys
+        self.table = DataTable(zebra_stripes=True, cursor_type="row",
+                               cursor_foreground_priority="renderable",
+                               # cursor_background_priority="renderable"
+                               )
+        yield Footer()
+
+        yield self.table
+
     def action_save_config(self) -> bool:
-        # self.show_cursor = False
+        # self.table.show_cursor = False
         return self.config.save_config()
 
     # def action_search_updates(self):
@@ -118,13 +135,13 @@ class ModManagerView(DataTable):
             columns = [columns]
         else:
             # get all keys
-            columns = [colkey.value for colkey in self.columns.keys()]
+            columns = [colkey.value for colkey in self.table.columns.keys()]
         # raise Exception(columns)
         if rows is str:
             rows = [rows]
         else:
             # get all keys
-            rows = [rowkey.value for rowkey in self.rows.keys()]
+            rows = [rowkey.value for rowkey in self.table.rows.keys()]
         for row in rows:
             app = self.config.get_app(row)
             # time.sleep(0.50)
@@ -143,8 +160,8 @@ class ModManagerView(DataTable):
             }
 
             for column in columns:
-                # self.update_cell(value=Text(str("cell"), style="italic #03AC13", justify="right"), row_key=row, column_key=column)
+                # self.table.update_cell(value=Text(str("cell"), style="italic #03AC13", justify="right"), row_key=row, column_key=column)
                 if app_info.get(column) is not Text:
-                    self.update_cell(value=app_info.get(column), row_key=row, column_key=column)
+                    self.table.update_cell(value=app_info.get(column), row_key=row, column_key=column)
                 else:
-                    self.update_cell(value=Text(app_info.get(column) or UNKNOWN), row_key=row, column_key=column)
+                    self.table.update_cell(value=Text(app_info.get(column) or UNKNOWN), row_key=row, column_key=column)
