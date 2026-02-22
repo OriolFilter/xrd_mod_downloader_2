@@ -1,17 +1,10 @@
-import asyncio
 import dataclasses
-import json
 import os.path
-import platform
-import sys
-import time
-from json import JSONEncoder
+from abc import ABC, abstractmethod
 from zipfile import ZipFile
 
 from github import GitRelease
 from github.GitReleaseAsset import GitReleaseAsset
-
-from abc import ABC, abstractmethod, abstractproperty
 
 
 # from Config import GlobalConfig
