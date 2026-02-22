@@ -1,10 +1,15 @@
 import dataclasses
 import os.path
+import subprocess
 from abc import ABC, abstractmethod
 from zipfile import ZipFile
 
+import psutil
 from github import GitRelease
 from github.GitReleaseAsset import GitReleaseAsset
+from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
+
+from subprocess import Popen, DEVNULL
 
 
 # from Config import GlobalConfig
@@ -26,7 +31,7 @@ class AppStruct(ABC):
     # release_available: [GitRelease] = None
     # track_updates: bool = False
     # tracked: bool = False
-    # In case multiple fulfill the same role/have the same name, ie Iquis vs Kkots, or ibrow19 for the replay takover
+    # In case multiple fulfill the same role/have the same name, ie Iquis vs Kkots, or ibrow19 for the replay takeover
     recommended: bool = False
     description: str = ""
     __latest_release_available: GitRelease = None
@@ -103,9 +108,13 @@ class AppStruct(ABC):
         # await asyncio.sleep(3)
         return True
 
-
     @abstractmethod
     def _install_release(self, release: GitRelease):
+        """
+        Some mods might not need this and will be set as "pass"
+        :param release:
+        :return:
+        """
         pass
 
     def export_config_dict(self) -> {str: str | int | None | bool}:
@@ -119,21 +128,39 @@ class AppStruct(ABC):
         }
 
     @property
+    def current_release_files_path(self) -> str:
+        return "{}/{}/{}".format(self._config.app_download_path,
+                                 self.app_name.replace("/", "_"), self.tag_name)
+
+    @property
+    @abstractmethod
+    def executable_path(self) -> str:
+        """
+        Returns the location of the .exe file or whatever that needs to be launched.
+        Usually will be /app/tag/app.exe, but some might vary/have tag prefixes/suffixes.
+        :return:
+        """
+        pass
+
+    @property
     def up_to_date(self) -> bool:
-        if self.tag_name and self.__latest_release_available and self.tag_name == self.__latest_release_available.tag_name:
+        if self.tag_name \
+                and self.__latest_release_available \
+                and self.tag_name == self.__latest_release_available.tag_name:
             return True
         return False
 
     async def download_release(self, release: GitRelease) -> None:
         """Download the mod/app files"""
-        await self.__download_app(release=release)
+        await self.__download_release(release=release)
         # await asyncio.sleep(3)
 
-    async def __download_app(self, release: GitRelease) -> None:
+    async def __download_release(self, release: GitRelease) -> None:
         files_to_download: [GitReleaseAsset] = []
         assets_whitelist = self._get_assets_whitelist(release=release)
-        release_download_folder_path = "{}/{}/{}".format(self._config.app_download_path,
-                                                         self.app_name.replace("/", "_"), release.tag_name)
+
+        new_release_files_path = "{}/{}/{}".format(self._config.app_download_path,
+                                                   self.app_name.replace("/", "_"), release.tag_name)
 
         release: GitRelease
         for asset in release.assets:
@@ -143,26 +170,29 @@ class AppStruct(ABC):
         # raise Exception(f"{len(files_to_download) > 0}?")
         if not len(files_to_download) > 0:
             raise Exception(
-                "No files matched the criteria to be Download.\nFiles matched: {}.\nFiles whitelisted: {}\nFiles found: {}".format(
+                "No files matched the criteria to be Download."
+                "\nFiles matched: {}."
+                "\nFiles whitelisted: {}."
+                "\nFiles found: {}".format(
                     files_to_download,
                     assets_whitelist,
                     [asset.name for asset in release.assets])
             )
         # Check download folder exists
-        if not os.path.exists(path=release_download_folder_path):
-            os.makedirs(release_download_folder_path, exist_ok=True)
-        elif not os.path.isdir(release_download_folder_path):
-            raise Exception("Downloads path ({}) is occupied by a file".format(release_download_folder_path))
+        if not os.path.exists(path=new_release_files_path):
+            os.makedirs(new_release_files_path, exist_ok=True)
+        elif not os.path.isdir(new_release_files_path):
+            raise Exception("Downloads path ({}) is occupied by a file".format(new_release_files_path))
 
         for asset in files_to_download:
             asset: GitReleaseAsset
-            asset.download_asset(path=f"{release_download_folder_path}/{asset.name}")
+            asset.download_asset(path=f"{new_release_files_path}/{asset.name}")
 
         # # For each zip unzip
         for file in files_to_download:
             if file.name.endswith(".zip"):
-                with ZipFile(f"{release_download_folder_path}/{file.name}") as z:
-                    z.extractall(path=release_download_folder_path)
+                with ZipFile(f"{new_release_files_path}/{file.name}") as z:
+                    z.extractall(path=new_release_files_path)
                     # TODO only extract desired files
 
     def get_assets_whitelist(self, release: GitRelease):
@@ -173,10 +203,10 @@ class AppStruct(ABC):
         raise NotImplementedError("_download_app for app {}".format(self.__class__))
 
     def launch(self):
-        if self.can_be_launched():
-            self._launch()
-        else:
-            raise Exception("Can't be launched")
+        # if self.can_be_launched():
+        self._launch()
+        # else:
+        #     raise Exception("Can't be launched")
 
     @abstractmethod
     def _launch(self):
@@ -184,7 +214,9 @@ class AppStruct(ABC):
 
     @property
     def is_installed(self) -> bool:
-        return self._is_installed
+        if self.tag_name:
+            return self._is_installed
+        return False
 
     @property
     @abstractmethod
@@ -206,10 +238,14 @@ class AppStruct(ABC):
     #     pass
 
     def can_be_launched(self) -> bool:
-        return self.is_installed or self._can_be_launched
+        return self.is_installed and self._can_be_launched
 
 
 class GenericApp(AppStruct):
+    @property
+    def executable_path(self) -> str:
+        pass
+
     def _install_release(self, release: GitRelease):
         pass
 
@@ -235,7 +271,16 @@ class GenericApp(AppStruct):
 
 
 class WakeUpTool(AppStruct):
+    @property
+    def executable_path(self) -> str:
+        return f"{self.current_release_files_path}/GGXrdReversalTool.exe"
+
     def _install_release(self, release: GitRelease):
+        """
+        This mod only needs to download files.
+        :param release:
+        :return:
+        """
         pass
 
     _can_be_launched = True
@@ -249,7 +294,54 @@ class WakeUpTool(AppStruct):
     #     pass
 
     def _launch(self):
-        raise NotImplementedError("_launch for app {}".format(self.__class__))
+        """
+        Launch .exe RN this assumes you are on Linux
+        """
+
+        xrd_process = None
+        for pid in psutil.process_iter():
+            if pid.name() == "GuiltyGearXrd.exe":
+                xrd_process = pid
+                break
+        del pid
+
+        if not xrd_process:
+            raise XrdNotRunning
+
+        envs = xrd_process.environ()
+
+        wineloader = envs.get("WINELOADER")
+
+        if not wineloader:
+            raise WineLoaderNotFound
+
+        wineprefix = envs.get("WINEPREFIX")
+        if not wineprefix:
+            raise WinePrefixNotFound
+
+        envs = {
+            "WINEFSYNC": "1",
+            "WINEPREFIX": wineprefix,
+            "DISPLAY": envs.get("DISPLAY")
+        }
+        # raise Exception(f"WINEFSYNC='1' WINEPREFIX='{envs.get('WINEPREFIX')}' {wineloader} {self.executable_path}")
+
+        # startupinfo = subprocess.STARTUPINFO()
+        # startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
+        subprocess.Popen(
+            # executable=,
+            shell=False,
+            args=[
+                wineloader,
+                self.executable_path
+            ],
+            env=envs,
+            stdin=None,
+            stdout=DEVNULL,
+            stderr=DEVNULL,
+            start_new_session=True,
+        )
 
     # @property
     # def _is_patched(self) -> bool:
@@ -269,11 +361,9 @@ class WakeUpTool(AppStruct):
         """
         files_to_find = ["GGXrdReversalTool.exe"]
 
-        release_download_folder_path = "{}/{}/{}".format(self._config.app_download_path,
-                                                         self.app_name.replace("/", "_"), self.tag_name)
-
         for file in files_to_find:
-            if not os.path.isfile(f"{release_download_folder_path}/{file}"):
+            # raise Exception(f"{self.current_release_files_path}/{file}")
+            if not os.path.isfile(f"{self.current_release_files_path}/{file}"):
                 return False
 
         return True
@@ -289,7 +379,16 @@ class WakeUpTool(AppStruct):
 
 
 class ReplayTakeover(AppStruct):
+    @property
+    def executable_path(self) -> str:
+        pass
+
     def _install_release(self, release: GitRelease):
+        """
+        # TODO
+        :param release:
+        :return:
+        """
         pass
 
     # def _patch_linux(self):
@@ -317,11 +416,8 @@ class ReplayTakeover(AppStruct):
         """
         files_to_find = ["GGXrdReplayTakeoverInjector.exe", "GGXrdReplayTakeover.dll"]
 
-        release_download_folder_path = "{}/{}/{}".format(self._config.app_download_path,
-                                                         self.app_name.replace("/", "_"), self.tag_name)
-
         for file in files_to_find:
-            if not os.path.isfile(f"{release_download_folder_path}/{file}"):
+            if not os.path.isfile(f"{self.current_release_files_path}/{file}"):
                 return False
         return True
 

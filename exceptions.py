@@ -1,0 +1,16 @@
+class XrdNotRunning(Exception):
+    """
+    Raised when the XRD process is not found, mostly due to the game not running.
+    """
+
+
+class WineLoaderNotFound(Exception):
+    """
+    Raised when the value/path for WineLoader couldn't be found (env WINELOADER)
+    """
+
+
+class WinePrefixNotFound(Exception):
+    """
+    Raised when the value/path for WinePrefix couldn't be found (env WINEPREFIX)
+    """

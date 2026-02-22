@@ -7,6 +7,7 @@ from textual.app import App, ComposeResult, Binding
 from textual.widgets import DataTable, Footer
 
 from Config import GlobalConfig
+from exceptions import XrdNotRunning
 from modClasses import AppStruct
 
 NO = Text("No", style="#a83a32 bold")
@@ -82,6 +83,28 @@ class ModManagerApp(App):
     # def action_search_updates_app(self):
     #     pass
 
+    def action_launch_mod(self):
+        app = self.selected_app
+        app: AppStruct
+        if not app.is_installed:
+            self.notify(f"App {app.app_name} is not installed.\nInstall before launching.",
+                        severity="warning")
+        elif not app.can_be_launched():
+            # TODO check if dotnet is required/is installed
+            self.notify(f"Can't launch app {app.app_name}.\nEnsure the app is installed.",
+                        severity="error")
+        else:
+            try:
+                app.launch()
+                self.notify(f"Launched {app.app_name}.", severity="information")
+            except XrdNotRunning:
+                self.notify(f"Can't launch app {app.app_name}.\nXrdApp is not running.",
+                            severity="error")
+            # except Exception as e:
+            #     self.notify(f"Can't launch app {app.app_name}.\nError: {e}.",
+            #                 severity="error")
+
+
     def compose(self) -> ComposeResult:
         # Footer to show keys
         self.table = DataTable(zebra_stripes=True, cursor_type="row",
@@ -107,7 +130,7 @@ class ModManagerApp(App):
 
     async def action_update_app_to_latest(self):
         # self.get_loading_widget()
-        self.table.loading = True
+        # self.table.loading = True
         # with self.suspend():
         #     system("vim")
         # with self.suspend():
@@ -138,7 +161,7 @@ class ModManagerApp(App):
         if not download.done():
             # No clue under which circumstances this would occur but whatever
             self.notify("Failed to download the mod!", severity="error")
-            self.table.loading = False
+            # self.table.loading = False
             return 0
         self.notify("Download completed.\nStarting install step.", severity="information")
 
