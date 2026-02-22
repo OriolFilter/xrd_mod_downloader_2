@@ -1,17 +1,13 @@
 import asyncio
-import time
-from asyncio import Task
-from os import system
 
 from github.GitRelease import GitRelease
-from rich.text import TextType, Text
+from rich.text import Text
+from textual import work
 from textual.app import App, ComposeResult, Binding
 from textual.widgets import DataTable, Footer
 
 from Config import GlobalConfig
 from modClasses import AppStruct
-from textual import log, work
-from textual.widgets import LoadingIndicator
 
 NO = Text("No", style="#a83a32 bold")
 FALSE = NO

@@ -1,8 +1,9 @@
+import json
+import os
+
 from github import Github
 
-from modClasses import AppStruct, WakeUpTool, GenericApp, ReplayTakeover
-import os
-import json
+from modClasses import AppStruct, WakeUpTool
 
 
 class GlobalConfig:
