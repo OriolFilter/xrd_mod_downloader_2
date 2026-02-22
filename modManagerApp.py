@@ -137,10 +137,11 @@ class ModManagerApp(App):
         # TODO try except: show error window
         # TODO set rate limit
         # self.run_worker(self.__update_app(self.selected_app), exclusive=True)
-        self.__update_app_to_release(app=self.selected_app)
+        # self.__update_app_to_release(app=self.selected_app)
+        self.__update_app_to_release()
 
     @work(exclusive=True)
-    async def __update_app_to_release(self, app: AppStruct, release: GitRelease = None):
+    async def __update_app_to_release(self, release: GitRelease = None):
         """
         Calls download and install methods from the app class.
 
@@ -149,7 +150,7 @@ class ModManagerApp(App):
         Notify through the process.
         :return:
         """
-
+        app = self.selected_app
         if release is None:
             release = app.latest_release
         # TODO check if its already download, skipp download if exists
@@ -163,18 +164,21 @@ class ModManagerApp(App):
             self.notify("Failed to download the mod!", severity="error")
             # self.table.loading = False
             return 0
-        self.notify("Download completed.\nStarting install step.", severity="information")
 
-        async with asyncio.TaskGroup() as tg:
-            install = tg.create_task(app.install_release(release=release))
-        #
-        # if not install.done():
-        #     # No clue under which circumstances this would occur but whatever
-        #     self.notify("Failed to download the mod!", severity="error")
-        #     self.table.loading = False
-        #     return 0
+        if not app.requires_install:
+            self.notify("Download completed.", severity="information")
+        else:
+            self.notify("Download completed.\nStarting install step.", severity="information")
+            async with asyncio.TaskGroup() as tg:
+                install = tg.create_task(app.install_release(release=release))
 
-        self.notify(f"Mod {app.app_name} installed.")
+            if not install.done():
+                # No clue under which circumstances this would occur but whatever
+                self.notify("Failed to download the mod!", severity="error")
+                self.table.loading = False
+                return 0
+
+            self.notify(f"Mod {app.app_name} installed.")
 
         self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
         self.table.loading = False

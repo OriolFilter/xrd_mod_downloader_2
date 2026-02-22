@@ -32,6 +32,8 @@ class AppStruct(ABC):
     # track_updates: bool = False
     # tracked: bool = False
     # In case multiple fulfill the same role/have the same name, ie Iquis vs Kkots, or ibrow19 for the replay takeover
+    requires_install = True
+    requires_patch = True
     recommended: bool = False
     description: str = ""
     __latest_release_available: GitRelease = None
@@ -134,7 +136,7 @@ class AppStruct(ABC):
 
     @property
     @abstractmethod
-    def executable_path(self) -> str:
+    def _executable_path(self) -> str:
         """
         Returns the location of the .exe file or whatever that needs to be launched.
         Usually will be /app/tag/app.exe, but some might vary/have tag prefixes/suffixes.
@@ -243,7 +245,7 @@ class AppStruct(ABC):
 
 class GenericApp(AppStruct):
     @property
-    def executable_path(self) -> str:
+    def _executable_path(self) -> str:
         pass
 
     def _install_release(self, release: GitRelease):
@@ -271,8 +273,10 @@ class GenericApp(AppStruct):
 
 
 class WakeUpTool(AppStruct):
+    requires_install = False
+    requires_patch = False
     @property
-    def executable_path(self) -> str:
+    def _executable_path(self) -> str:
         return f"{self.current_release_files_path}/GGXrdReversalTool.exe"
 
     def _install_release(self, release: GitRelease):
@@ -334,7 +338,7 @@ class WakeUpTool(AppStruct):
             shell=False,
             args=[
                 wineloader,
-                self.executable_path
+                self._executable_path
             ],
             env=envs,
             stdin=None,
@@ -380,7 +384,7 @@ class WakeUpTool(AppStruct):
 
 class ReplayTakeover(AppStruct):
     @property
-    def executable_path(self) -> str:
+    def _executable_path(self) -> str:
         pass
 
     def _install_release(self, release: GitRelease):
