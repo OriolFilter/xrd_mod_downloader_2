@@ -3,7 +3,7 @@ import os
 
 from github import Github
 
-from modClasses import AppStruct, WakeUpTool
+from modClasses import AppStruct, WakeUpTool, HitboxOverlay
 
 
 class GlobalConfig:
@@ -15,8 +15,10 @@ class GlobalConfig:
 
     def __init__(self):
         mod_list = [
-            # AppStruct(repo_name="ggxrd_hitbox_overlay_2211", repo_owner="kkots", description="Hitbox/framedata viewer "
-            #                                                                                  "mod"),
+            # HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
+            #               repo_owner="kkots",
+            #               description="Hitbox/framedata viewer mod",
+            #               _config=self),
             WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
             # ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self),

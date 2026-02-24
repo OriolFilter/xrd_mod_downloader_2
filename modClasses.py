@@ -37,7 +37,7 @@ class AppStruct(ABC):
     recommended: bool = False
     description: str = ""
     __latest_release_available: GitRelease = None
-    _can_be_launched = False
+    can_be_launched = False
 
     @property
     def app_name(self) -> str:
@@ -240,10 +240,11 @@ class AppStruct(ABC):
     #     pass
 
     def can_be_launched(self) -> bool:
-        return self.is_installed and self._can_be_launched
+        return self.is_installed and self.can_be_launched
 
 
 class GenericApp(AppStruct):
+    can_be_launched = False
     @property
     def _executable_path(self) -> str:
         pass
@@ -287,7 +288,7 @@ class WakeUpTool(AppStruct):
         """
         pass
 
-    _can_be_launched = True
+    can_be_launched = True
 
     # def _patch_windows(self):
     #     """No need to patch"""
@@ -428,3 +429,34 @@ class ReplayTakeover(AppStruct):
     # @property
     # def _is_patched(self) -> bool:
     #     return False
+
+
+class HitboxOverlay(AppStruct):
+    # _can_be_launched = True
+    @property
+    def _executable_path(self) -> str:
+        pass
+
+    def _install_release(self, release: GitRelease):
+        pass
+
+    # def _patch_windows(self):
+    #     raise NotImplementedError("_patch_windows for app {}".format(self.__class__))
+    #
+    # def _patch_linux(self):
+    #     raise NotImplementedError("_patch_linux for app {}".format(self.__class__))
+
+    def _launch(self):
+        raise NotImplementedError("_launch for app {}".format(self.__class__))
+
+    # @property
+    # def _is_patched(self) -> bool:
+    #     raise NotImplementedError("_is_patched for app {}".format(self.__class__))
+
+    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+        assets_whitelist = ["ggxrd_hitbox_overlay.zip"]
+        return assets_whitelist
+
+    @property
+    def _is_installed(self):
+        return False

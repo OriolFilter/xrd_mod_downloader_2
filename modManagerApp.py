@@ -165,20 +165,20 @@ class ModManagerApp(App):
             # self.table.loading = False
             return 0
 
-        if not app.requires_install:
-            self.notify("Download completed.", severity="information")
-        else:
-            self.notify("Download completed.\nStarting install step.", severity="information")
-            async with asyncio.TaskGroup() as tg:
-                install = tg.create_task(app.install_release(release=release))
+        # if not app.requires_install:
+        #     self.notify("Download completed.", severity="information")
+        # else:
+        self.notify("Download completed.\nStarting install step.", severity="information")
+        async with asyncio.TaskGroup() as tg:
+            install = tg.create_task(app.install_release(release=release))
 
-            if not install.done():
-                # No clue under which circumstances this would occur but whatever
-                self.notify("Failed to download the mod!", severity="error")
-                self.table.loading = False
-                return 0
+        if not install.done():
+            # No clue under which circumstances this would occur but whatever
+            self.notify("Failed to download the mod!", severity="error")
+            self.table.loading = False
+            return 0
 
-            self.notify(f"Mod {app.app_name} installed.")
+        self.notify(f"Mod {app.app_name} installed.")
 
         self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
         self.table.loading = False
