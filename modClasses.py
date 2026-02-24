@@ -1,6 +1,7 @@
 import dataclasses
 import os.path
 import subprocess
+import sys
 import time
 from abc import ABC, abstractmethod
 from zipfile import ZipFile
@@ -238,11 +239,12 @@ class AppStruct(ABC):
             "WINEPREFIX": wineprefix,
             "DISPLAY": envs.get("DISPLAY")
         }
-        subprocess.Popen(
+        p = subprocess.Popen(
             shell=False,
             args=[
                 wineloader,
-                self._executable_path
+                self._executable_path,
+                *self._launch_extra_args,
             ],
             env=envs,
             stdin=None,
@@ -251,6 +253,16 @@ class AppStruct(ABC):
             cwd=self.current_release_files_path,
             start_new_session=True,
         )
+        # raise Exception([
+        #         wineloader,
+        #         self._executable_path,
+        #         *self._launch_extra_args,
+        #         p.pid
+        #     ])
+
+    @property
+    def _launch_extra_args(self) -> [str]:
+        return []
 
     @property
     def is_installed(self) -> bool:
@@ -416,6 +428,15 @@ class HitboxOverlay(AppStruct):
     def _get_assets_whitelist(self, release: GitRelease) -> [str]:
         assets_whitelist = ["ggxrd_hitbox_overlay.zip"]
         return assets_whitelist
+
+    @property
+    def _launch_extra_args(self) -> [str]:
+        """
+        "Force" the injection to avoid the window popup
+        :return:
+        """
+        return ["-force"]
+
 
     @property
     def _is_installed(self) -> bool:
