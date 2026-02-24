@@ -1,6 +1,7 @@
 import dataclasses
 import os.path
 import subprocess
+import time
 from abc import ABC, abstractmethod
 from zipfile import ZipFile
 
@@ -203,11 +204,8 @@ class AppStruct(ABC):
     def _get_assets_whitelist(self, release: GitRelease) -> [str]:
         raise NotImplementedError("_download_app for app {}".format(self.__class__))
 
-    def launch(self):
-        # if self.can_be_launched():
+    def launch(self) -> None:
         self._launch()
-        # else:
-        #     raise Exception("Can't be launched")
 
     def _launch(self):
         """
@@ -240,13 +238,7 @@ class AppStruct(ABC):
             "WINEPREFIX": wineprefix,
             "DISPLAY": envs.get("DISPLAY")
         }
-        # raise Exception(f"WINEFSYNC='1' WINEPREFIX='{envs.get('WINEPREFIX')}' {wineloader} {self.executable_path}")
-
-        # startupinfo = subprocess.STARTUPINFO()
-        # startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
         subprocess.Popen(
-            # executable=,
             shell=False,
             args=[
                 wineloader,
@@ -256,6 +248,7 @@ class AppStruct(ABC):
             stdin=None,
             stdout=DEVNULL,
             stderr=DEVNULL,
+            cwd=self.current_release_files_path,
             start_new_session=True,
         )
 
@@ -302,9 +295,6 @@ class GenericApp(AppStruct):
     # def _patch_linux(self):
     #     raise NotImplementedError("_patch_linux for app {}".format(self.__class__))
 
-    # def _launch(self):
-    #     raise NotImplementedError("_launch for app {}".format(self.__class__))
-
     # @property
     # def _is_patched(self) -> bool:
     #     raise NotImplementedError("_is_patched for app {}".format(self.__class__))
@@ -320,6 +310,7 @@ class GenericApp(AppStruct):
 class WakeUpTool(AppStruct):
     requires_install = False
     requires_patch = False
+
     @property
     def _executable_path(self) -> str:
         return f"{self.current_release_files_path}/GGXrdReversalTool.exe"
@@ -331,22 +322,6 @@ class WakeUpTool(AppStruct):
         :return:
         """
         pass
-
-    # def _patch_windows(self):
-    #     """No need to patch"""
-    #     pass
-    #
-    # def _patch_linux(self):
-    #     """No need to patch"""
-    #     pass
-
-    # @property
-    # def _is_patched(self) -> bool:
-    #     """
-    #     Doesn't need to patch, if it's installed is patched :thumbsup:
-    #     :return:
-    #     """
-    #     return self.is_installed
 
     @property
     def _is_installed(self) -> bool:
@@ -398,9 +373,6 @@ class ReplayTakeover(AppStruct):
         assets_whitelist = ["GGXrdReplayTakeover.zip".format(release.tag_name)]
         return assets_whitelist
 
-    # def _launch(self):
-    #     pass
-
     @property
     def _is_installed(self) -> bool:
         """
@@ -426,7 +398,7 @@ class ReplayTakeover(AppStruct):
 class HitboxOverlay(AppStruct):
     @property
     def _executable_path(self) -> str:
-        return f"{self.current_release_files_path}/ggxrd_hitbox_injector64bit.exe"
+        return f"{self.current_release_files_path}/ggxrd_hitbox_injector.exe"
 
     def _install_release(self, release: GitRelease):
         pass
@@ -436,9 +408,6 @@ class HitboxOverlay(AppStruct):
     #
     # def _patch_linux(self):
     #     raise NotImplementedError("_patch_linux for app {}".format(self.__class__))
-
-    # def _launch(self):
-    #     raise NotImplementedError("_launch for app {}".format(self.__class__))
 
     # @property
     # def _is_patched(self) -> bool:
