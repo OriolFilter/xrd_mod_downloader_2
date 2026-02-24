@@ -37,7 +37,6 @@ class AppStruct(ABC):
     recommended: bool = False
     description: str = ""
     __latest_release_available: GitRelease = None
-    can_be_launched = False
 
     @property
     def app_name(self) -> str:
@@ -210,94 +209,6 @@ class AppStruct(ABC):
         # else:
         #     raise Exception("Can't be launched")
 
-    @abstractmethod
-    def _launch(self):
-        pass
-
-    @property
-    def is_installed(self) -> bool:
-        if self.tag_name:
-            return self._is_installed
-        return False
-
-    @property
-    @abstractmethod
-    def _is_installed(self) -> bool:
-        """
-        Returns if the app is installed or not.
-        What "installed" means is a bit loose, but most of the time will be checking if X files are at Z place.
-        :return:
-        """
-        pass
-
-    # @property
-    # def is_patched(self) -> bool:
-    #     return self._is_installed
-
-    # @property
-    # @abstractmethod
-    # def _is_patched(self) -> bool:
-    #     pass
-
-    def can_be_launched(self) -> bool:
-        return self.is_installed and self.can_be_launched
-
-
-class GenericApp(AppStruct):
-    can_be_launched = False
-    @property
-    def _executable_path(self) -> str:
-        pass
-
-    def _install_release(self, release: GitRelease):
-        pass
-
-    # def _patch_windows(self):
-    #     raise NotImplementedError("_patch_windows for app {}".format(self.__class__))
-    #
-    # def _patch_linux(self):
-    #     raise NotImplementedError("_patch_linux for app {}".format(self.__class__))
-
-    def _launch(self):
-        raise NotImplementedError("_launch for app {}".format(self.__class__))
-
-    # @property
-    # def _is_patched(self) -> bool:
-    #     raise NotImplementedError("_is_patched for app {}".format(self.__class__))
-
-    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
-        raise NotImplementedError("_download_app for app {}".format(self.__class__))
-
-    @property
-    def _is_installed(self):
-        return False
-
-
-class WakeUpTool(AppStruct):
-    requires_install = False
-    requires_patch = False
-    @property
-    def _executable_path(self) -> str:
-        return f"{self.current_release_files_path}/GGXrdReversalTool.exe"
-
-    def _install_release(self, release: GitRelease):
-        """
-        This mod only needs to download files.
-        :param release:
-        :return:
-        """
-        pass
-
-    can_be_launched = True
-
-    # def _patch_windows(self):
-    #     """No need to patch"""
-    #     pass
-    #
-    # def _patch_linux(self):
-    #     """No need to patch"""
-    #     pass
-
     def _launch(self):
         """
         Launch .exe RN this assumes you are on Linux
@@ -347,6 +258,87 @@ class WakeUpTool(AppStruct):
             stderr=DEVNULL,
             start_new_session=True,
         )
+
+    @property
+    def is_installed(self) -> bool:
+        if self.tag_name:
+            return self._is_installed
+        return False
+
+    @property
+    @abstractmethod
+    def _is_installed(self) -> bool:
+        """
+        Returns if the app is installed or not.
+        What "installed" means is a bit loose, but most of the time will be checking if X files are at Z place.
+        :return:
+        """
+        pass
+
+    # @property
+    # def is_patched(self) -> bool:
+    #     return self._is_installed
+
+    # @property
+    # @abstractmethod
+    # def _is_patched(self) -> bool:
+    #     pass
+
+    def can_be_launched(self) -> bool:
+        return any(self._executable_path)
+
+
+class GenericApp(AppStruct):
+    @property
+    def _executable_path(self) -> str:
+        pass
+
+    def _install_release(self, release: GitRelease):
+        pass
+
+    # def _patch_windows(self):
+    #     raise NotImplementedError("_patch_windows for app {}".format(self.__class__))
+    #
+    # def _patch_linux(self):
+    #     raise NotImplementedError("_patch_linux for app {}".format(self.__class__))
+
+    # def _launch(self):
+    #     raise NotImplementedError("_launch for app {}".format(self.__class__))
+
+    # @property
+    # def _is_patched(self) -> bool:
+    #     raise NotImplementedError("_is_patched for app {}".format(self.__class__))
+
+    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+        raise NotImplementedError("_download_app for app {}".format(self.__class__))
+
+    @property
+    def _is_installed(self):
+        return False
+
+
+class WakeUpTool(AppStruct):
+    requires_install = False
+    requires_patch = False
+    @property
+    def _executable_path(self) -> str:
+        return f"{self.current_release_files_path}/GGXrdReversalTool.exe"
+
+    def _install_release(self, release: GitRelease):
+        """
+        This mod only needs to download files.
+        :param release:
+        :return:
+        """
+        pass
+
+    # def _patch_windows(self):
+    #     """No need to patch"""
+    #     pass
+    #
+    # def _patch_linux(self):
+    #     """No need to patch"""
+    #     pass
 
     # @property
     # def _is_patched(self) -> bool:
@@ -406,8 +398,8 @@ class ReplayTakeover(AppStruct):
         assets_whitelist = ["GGXrdReplayTakeover.zip".format(release.tag_name)]
         return assets_whitelist
 
-    def _launch(self):
-        pass
+    # def _launch(self):
+    #     pass
 
     @property
     def _is_installed(self) -> bool:
@@ -432,10 +424,9 @@ class ReplayTakeover(AppStruct):
 
 
 class HitboxOverlay(AppStruct):
-    # _can_be_launched = True
     @property
     def _executable_path(self) -> str:
-        pass
+        return f"{self.current_release_files_path}/ggxrd_hitbox_injector64bit.exe"
 
     def _install_release(self, release: GitRelease):
         pass
@@ -446,8 +437,8 @@ class HitboxOverlay(AppStruct):
     # def _patch_linux(self):
     #     raise NotImplementedError("_patch_linux for app {}".format(self.__class__))
 
-    def _launch(self):
-        raise NotImplementedError("_launch for app {}".format(self.__class__))
+    # def _launch(self):
+    #     raise NotImplementedError("_launch for app {}".format(self.__class__))
 
     # @property
     # def _is_patched(self) -> bool:
@@ -458,5 +449,23 @@ class HitboxOverlay(AppStruct):
         return assets_whitelist
 
     @property
-    def _is_installed(self):
-        return False
+    def _is_installed(self) -> bool:
+        """
+        TODO not sure what it needs right now
+
+        :return: True if all files exists.
+        False if any is missing.
+        """
+        files_to_find = [
+            "ggxrd_hitbox_overlay.ini",
+            "ggxrd_hitbox_overlay.dll",
+            "ggxrd_hitbox_injector.exe",
+            "ggxrd_hitbox_injector64bit.exe",
+        ]
+
+        for file in files_to_find:
+            # raise Exception(f"{self.current_release_files_path}/{file}")
+            if not os.path.isfile(f"{self.current_release_files_path}/{file}"):
+                return False
+
+        return True
