@@ -437,7 +437,6 @@ class HitboxOverlay(AppStruct):
         """
         return ["-force"]
 
-
     @property
     def _is_installed(self) -> bool:
         """
