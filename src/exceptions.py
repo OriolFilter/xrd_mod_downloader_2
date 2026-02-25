@@ -14,3 +14,15 @@ class WinePrefixNotFound(Exception):
     """
     Raised when the value/path for WinePrefix couldn't be found (env WINEPREFIX)
     """
+
+
+class XrdFolderNotFound(Exception):
+    """
+    Raised when the Xrd Folder is not located
+    """
+
+
+class XrdFolderNotValid(Exception):
+    """
+    Raised when the Xrd folder either given or tried to use is not recognized as such.
+    """

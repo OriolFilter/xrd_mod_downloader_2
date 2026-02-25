@@ -1,9 +1,11 @@
 import json
 import os
 
+import psutil
 from github import Github
 
 from modClasses import AppStruct, WakeUpTool, HitboxOverlay
+from exceptions import XrdFolderNotValid, XrdFolderNotFound
 
 
 class GlobalConfig:
@@ -13,7 +15,7 @@ class GlobalConfig:
     } = {}
     github_client: Github
 
-    xrd_path: str
+    __xrd_path: str = ""
 
     def __init__(self):
         # TODO
@@ -58,10 +60,6 @@ class GlobalConfig:
         return os.getcwd()
 
     @property
-    def xrd_folder(self) -> str:
-        raise NotImplementedError
-
-    @property
     def config_file_path(self):
         return f"{self.workdir}/config.json"
         # return f"{self.workdir}/config.json"
@@ -71,11 +69,17 @@ class GlobalConfig:
         # If exists -> load
         if os.path.exists(self.config_file_path) and os.path.isfile(self.config_file_path):
             # For app -> check if config says something and import fields
-            user_config: {str: {str}} = None
+            user_config: {str: str | {str: str}} = {}
+            mods_info: {str: {str: str}} = {}
+
             with open(self.config_file_path, 'r', encoding="utf-8") as user_file:
                 user_config = json.loads(user_file.read())
 
-            for app_name, app_values in user_config.items():
+            if xrd_path := user_config.get("xrd_path"):
+                self.xrd_path = xrd_path
+
+            mods_info = user_config.get("mods_info", {})
+            for app_name, app_values in mods_info.items():
                 app_name: str
                 app_values: {str: str}
                 app = self.get_app(app_name)
@@ -86,24 +90,27 @@ class GlobalConfig:
                         if hasattr(app, key):
                             app.__setattr__(key, value)
                         else:
-                            print(f"> Field '{key}' for app {app_name} couldn't load due to not matching a variable. Skipping.")
+                            print(
+                                f"> Field '{key}' for app {app_name} couldn't load due to not matching a variable. Skipping.")
                 else:
                     print(f"> Config for app {app_name} couldn't load due to not matching any app by name. Skipping.")
-
-            del app_name, app_values
             return True
 
-        # If doesn't -> Load default
-        return False
-        # raise NotImplementedError
-
     def save_config(self) -> bool:
-        config_dict: {str: {str: str}} = {}
+        config_dict: {str: str | {str: str}} = {}
+        mods_dict: {str: {str: str}} = {}
 
         # fields_to_export: [str] = ["tag_name","url_source_release"]
+
+        # Export mods info
         for key, app in self.mod_dict.items():
             app: AppStruct
-            config_dict[key] = app.export_config_dict()
+            mods_dict[key] = app.export_config_dict()
+
+        config_dict["mods_info"] = mods_dict
+        config_dict["xrd_path"] = self.xrd_path
+        # raise Exception(config_dict)
+        # Write / Save
         with open(self.config_file_path, 'w+', encoding="utf-8") as file:
             file.write(json.dumps(config_dict))
         return True
@@ -111,3 +118,49 @@ class GlobalConfig:
     @property
     def app_download_path(self) -> str:
         return f"{self.workdir}/downloads"
+
+    @staticmethod
+    def __find_xrd_location_if_open() -> str:
+        # 1. Find Xrd Process (if open)
+        xrd_process = None
+        for pid in psutil.process_iter():
+            if pid.name() == "GuiltyGearXrd.exe":
+                xrd_process = pid
+                break
+        del pid
+
+        return xrd_process.environ().get("PWD")
+
+    @staticmethod
+    def __find_xrd_process_by_folders() -> str:
+        # 2. Find Xrd by checking folders (only one path known right now on linux)
+        steam_path = "{home_path}/.steam/root/config/libraryfolders.vdf"
+        return ""
+
+    @property
+    def xrd_path(self) -> str:
+        if self.__xrd_path:
+            pass
+        elif path := self.__find_xrd_location_if_open():
+            self.xrd_path = path
+        elif path := self.__find_xrd_process_by_folders():
+            self.__xrd_path = path
+        else:
+            raise XrdFolderNotFound
+        return self.__xrd_path
+
+    @xrd_path.setter
+    def xrd_path(self, path: str):
+        if self.__check_xrd_path_is_valid(path):
+            self.__xrd_path = path
+        else:
+            raise XrdFolderNotValid()
+
+    @staticmethod
+    def __check_xrd_path_is_valid(path: str) -> bool:
+        """
+        TODO idk check various things from the given path.
+        :param path:
+        :return:
+        """
+        return True
