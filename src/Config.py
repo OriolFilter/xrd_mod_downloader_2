@@ -13,7 +13,12 @@ class GlobalConfig:
     } = {}
     github_client: Github
 
+    xrd_path: str
+
     def __init__(self):
+        # TODO
+        # C++ redistrib
+        # DotNet
         mod_list = [
             HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
                           repo_owner="kkots",

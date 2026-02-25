@@ -108,6 +108,7 @@ class AppStruct(ABC):
         self.published_at = release.published_at
         self.url_source_release = release.url
         self.tag_name = release.tag_name
+        self.release_id = release.id
         # await asyncio.sleep(3)
         return True
 
@@ -124,7 +125,7 @@ class AppStruct(ABC):
         return {
             "release_id": self.release_id,
             "tag_name": self.tag_name,
-            # "published_at": self.published_at,
+            "published_at": self.published_at,
             "url_source_release": self.url_source_release,
             # "enabled": self.enabled,
             # "hidden": self.hidden,
