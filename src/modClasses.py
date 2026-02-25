@@ -34,9 +34,8 @@ class AppStruct(ABC):
     # track_updates: bool = False
     # tracked: bool = False
     # In case multiple fulfill the same role/have the same name, ie Iquis vs Kkots, or ibrow19 for the replay takeover
-    requires_install = True
-    requires_patch = True
-    recommended: bool = False
+
+    # recommended: bool = False
     description: str = ""
     __latest_release_available: GitRelease = None
 
@@ -72,18 +71,26 @@ class AppStruct(ABC):
     # def __patch_linux(self):
     #     raise NotImplementedError
 
-    # def patch(self):
-    #     # If linux
-    #     # if Windows
-    #     # Else
-    #     match sys.platform:
-    #         case "linux":
-    #             self._patch_linux()
-    #         case "win32" | "cygwin":
-    #             self._patch_linux()
-    #         case _:
-    #             raise NotImplementedError(f"Platform '{sys.platform}' not supported, reach out to the owners if you "
-    #                                       f"want you device to be implemented.")
+    @abstractmethod
+    def is_patched(self):
+        pass
+
+    def patch(self):
+        if not self.is_patched():
+            self.patch()
+
+        # match sys.platform:
+        #     case "linux":
+        #         self._patch_linux()
+        #     case "win32" | "cygwin":
+        #         self._patch_linux()
+        #     case _:
+        #         raise NotImplementedError(f"Platform '{sys.platform}' not supported, reach out to the owners if you "
+        #                                   f"want you device to be implemented.")
+
+    @abstractmethod
+    def _patch(self):
+        pass
 
     # @abstractmethod
     # def _patch_linux(self):
@@ -240,7 +247,7 @@ class AppStruct(ABC):
             "WINEPREFIX": wineprefix,
             "DISPLAY": envs.get("DISPLAY")
         }
-        p = subprocess.Popen(
+        subprocess.Popen(
             shell=False,
             args=[
                 wineloader,
@@ -295,6 +302,12 @@ class AppStruct(ABC):
 
 
 class GenericApp(AppStruct):
+    def _patch(self):
+        pass
+
+    def is_patched(self):
+        pass
+
     @property
     def _executable_path(self) -> str:
         pass
@@ -321,8 +334,11 @@ class GenericApp(AppStruct):
 
 
 class WakeUpTool(AppStruct):
-    requires_install = False
-    requires_patch = False
+    def _patch(self):
+        pass
+
+    def is_patched(self):
+        pass
 
     @property
     def _executable_path(self) -> str:
@@ -364,9 +380,15 @@ class WakeUpTool(AppStruct):
 
 
 class ReplayTakeover(AppStruct):
+    def is_patched(self):
+        pass
+
+    def _patch(self):
+        pass
+
     @property
     def _executable_path(self) -> str:
-        pass
+        return "GGXrdReplayTakeoverInjector.exe"
 
     def _install_release(self, release: GitRelease):
         """
@@ -409,6 +431,12 @@ class ReplayTakeover(AppStruct):
 
 
 class HitboxOverlay(AppStruct):
+    def is_patched(self):
+        pass
+
+    def _patch(self):
+        pass
+
     @property
     def _executable_path(self) -> str:
         return f"{self.current_release_files_path}/ggxrd_hitbox_injector.exe"

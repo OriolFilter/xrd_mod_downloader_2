@@ -17,3 +17,5 @@ https://github.com/Textualize/textual/issues/4955
 TODO normalize either use of "app" or "mod"
 
 https://github.com/Nuitka/Nuitka/issues/43 compile to winsucks
+
+T to toggle selected for launchgroup? -> launching "all the mods that i care enough to install but not enough to path"
