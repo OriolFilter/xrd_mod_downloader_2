@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 import psutil
 from github import Github
@@ -131,10 +132,13 @@ class GlobalConfig:
 
         return xrd_process.environ().get("PWD")
 
-    @staticmethod
-    def __find_xrd_process_by_folders() -> str:
+    def __find_xrd_process_by_folders(self) -> str:
         # 2. Find Xrd by checking folders (only one path known right now on linux)
-        steam_path = "{home_path}/.steam/root/config/libraryfolders.vdf"
+        possible_paths = ["{HOME}/.steam/root/config/libraryfolders.vdf"]
+        for path in possible_paths:
+            self.__check_xrd_path_is_valid(path.format(
+                HOME=os.getenv("HOME"),
+            ))
         return ""
 
     @property
@@ -154,13 +158,23 @@ class GlobalConfig:
         if self.__check_xrd_path_is_valid(path):
             self.__xrd_path = path
         else:
-            raise XrdFolderNotValid()
+            raise XrdFolderNotValid(path)
 
     @staticmethod
     def __check_xrd_path_is_valid(path: str) -> bool:
         """
-        TODO idk check various things from the given path.
+        Checks if the folder exists and finds a series of files to determine "it's correct"
         :param path:
         :return:
         """
+        xrd_path = Path(path)
+        if xrd_path.exists() and xrd_path.is_dir():
+            files_to_find = [
+                "BootGGXrd.bat",
+                "Binaries/Win32/GuiltyGearXrd.exe",
+            ]
+            for file in files_to_find:
+                file_path = xrd_path.joinpath(file)
+                if not (file_path.exists() or file_path.is_file()):
+                    return False
         return True

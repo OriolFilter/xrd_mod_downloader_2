@@ -26,3 +26,7 @@ class XrdFolderNotValid(Exception):
     """
     Raised when the Xrd folder either given or tried to use is not recognized as such.
     """
+    # given_path: str
+
+    def __init__(self, path: str):
+        super().__init__(f"Path '{path}' is not a valid Xrd directory.")
