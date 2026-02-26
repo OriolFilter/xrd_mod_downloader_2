@@ -29,15 +29,6 @@ class AppStruct(ABC):
     published_at: str | None = None
     # app_type: str # Shouldn't be necessary/helpful.
     url_source_release: str | None = None
-    # automatically_patch: bool = None
-    # enabled: bool = False  # IDK
-    # hidden: bool = False
-    # release_available: [GitRelease] = None
-    # track_updates: bool = False
-    # tracked: bool = False
-    # In case multiple fulfill the same role/have the same name, ie Iquis vs Kkots, or ibrow19 for the replay takeover
-
-    # recommended: bool = False
     description: str = ""
     __latest_release_available: GitRelease = None
 
