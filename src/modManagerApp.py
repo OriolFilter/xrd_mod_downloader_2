@@ -48,7 +48,7 @@ class ModManagerApp(App):
         self.__column_fields = {
             # "app_name": "AppName",
             "installed": "Installed",
-            "patched": "Patched",
+            "patched": "Auto Start",
             "tag_name": " Current ",
             "latest_version_available": " Latest ",  # Or Up to date
             "up_to_date": "Up To Date",
