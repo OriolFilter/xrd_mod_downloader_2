@@ -401,7 +401,7 @@ class ReplayTakeover(AppStruct):
         ]
         files_to_contain_binaries_win32 = [
             "GGXrdReplayTakeover.dll",
-            "GGXrdReplayTakeoverInjector.exe",
+            self._executable_path,
             delay_takeover_bat
         ]
 
@@ -429,7 +429,7 @@ class ReplayTakeover(AppStruct):
         :return:
         """
         delay_takeover_bat = "DelayReplayTakeover.bat"
-        takeover_injector = "GGXrdReplayTakeoverInjector.exe"
+        takeover_injector = self._executable_path
         boot_xrd_bat = "BootGGXrd.bat"
         files_to_copy_binaries_win32 = [
             "GGXrdReplayTakeover.dll",
@@ -449,23 +449,35 @@ FOR /L %%I IN (1,1,30) DO (
 %CHECK_XRD% && start {takeover_inector} || echo Xrd didn't launch...
 """.format(takeover_inector=takeover_injector)
         # Check DelayReplayTakeover.bat
-        delay_takeover_path = pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(delay_takeover_bat)
+        delay_takeover_path = pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(
+            delay_takeover_bat)
         with open(delay_takeover_path, 'w+', encoding="utf-8") as file:
             file.write(bat_contents)
 
         # Check BootGGXrd.bat
         boot_xrd_path = pathlib.Path(self._config.xrd_path).joinpath(boot_xrd_bat)
 
-        # Skip if line exists (ie, when "upgrading/changing the version" of the mod.
-        append_to_boot_xrd = True
+        new_file_contents: [str] = []
         with open(boot_xrd_path, 'r', encoding="utf-8") as file:
-            for line in file.readlines():
+            # Skip if line exists (ie, when "upgrading/changing the version" of the mod.
+            append_to_boot_xrd = True
+
+            for line in file:
+                if len(takeover_injector) > 0 and line.startswith(takeover_injector):
+                    # Comment "old"/original method of patching
+                    new_file_contents.append(f":: {line}")
+                else:
+                    new_file_contents.append(line)
+
+                # Don't append if the bat already exists.
                 if line.find(delay_takeover_bat) >= 0:
                     append_to_boot_xrd = False
-        # Append line
-        if append_to_boot_xrd:
-            with open(boot_xrd_path, 'a', encoding="utf-8") as file:
-                file.write(f"start {delay_takeover_bat}\n")
+            # Append boot.bat
+            if append_to_boot_xrd:
+                new_file_contents.append(f"{delay_takeover_bat}\n")
+
+        with open(boot_xrd_path, "w", encoding="utf-8") as file:
+            file.writelines(new_file_contents)
 
         # Copy exe and dll/files
         for file in files_to_copy_binaries_win32:
