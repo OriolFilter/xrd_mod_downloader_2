@@ -184,16 +184,33 @@ class ModManagerApp(App):
         app = self.selected_app
         # if app.is_patched():
 
-        self.notify(f"Patching App: {app.app_name}",
-                    severity="warning")
-        async with asyncio.TaskGroup() as tg:
-            patch = tg.create_task(app.patch())
+        if not app.is_installed:
+            self.notify(f"Can't patch.\nApp not installed: {app.app_name}",
+                        severity="warning")
+        elif not app.is_patched:
+            self.notify(f"Patching App: {app.app_name}",
+                        severity="warning")
 
-        if not patch.done():
-            # No clue under which circumstances this would occur but whatever
-            # TODO capture exceptions ?
-            self.notify(f"Failed to patch mod {app.app_name}!", severity="error")
-            return 0
+            async with asyncio.TaskGroup() as tg:
+                patch = tg.create_task(app.patch())
+
+            if not patch.done():
+                # No clue under which circumstances this would occur but whatever
+                # TODO capture exceptions ?
+                self.notify(f"Failed to patch mod {app.app_name}!", severity="error")
+                return 0
+        else:
+            self.notify(f"Unpatch App: {app.app_name}",
+                        severity="warning")
+
+            async with asyncio.TaskGroup() as tg:
+                patch = tg.create_task(app.disable_patch())
+
+            if not patch.done():
+                # No clue under which circumstances this would occur but whatever
+                # TODO capture exceptions ?
+                self.notify(f"Failed to unpatch mod {app.app_name}!", severity="error")
+                return 0
 
         self.notify(f"Mod {app.app_name} patched.")
 
