@@ -47,12 +47,12 @@ class ModManagerApp(App):
         self.config = config
         self.__column_fields = {
             # "app_name": "AppName",
-            "description": "Description",
             "installed": "Installed",
             "patched": "Patched",
             "tag_name": " Current ",
             "latest_version_available": " Latest ",  # Or Up to date
             "up_to_date": "Up To Date",
+            "description": "Description",
         }
 
         super().__init__(*args, **kwargs)
@@ -233,7 +233,6 @@ class ModManagerApp(App):
             # time.sleep(0.50)
             # latest_release = app.get_latest_release_available()
             # latest_release = "paco"
-
             app_info = {
                 "app_name": app.app_name,
                 "tag_name": app.tag_name,
