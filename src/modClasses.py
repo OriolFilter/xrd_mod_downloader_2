@@ -1,5 +1,7 @@
 import dataclasses
 import os.path
+import pathlib
+import shutil
 import subprocess
 import sys
 import time
@@ -72,12 +74,12 @@ class AppStruct(ABC):
     #     raise NotImplementedError
 
     @abstractmethod
-    def is_patched(self):
+    def is_patched(self) -> bool:
         pass
 
-    def patch(self):
+    async def patch(self):
         if not self.is_patched():
-            self.patch()
+            self._patch()
 
         # match sys.platform:
         #     case "linux":
@@ -170,6 +172,7 @@ class AppStruct(ABC):
         files_to_download: [GitReleaseAsset] = []
         assets_whitelist = self._get_assets_whitelist(release=release)
 
+        # TODO move to pathlib lib
         new_release_files_path = "{}/{}/{}".format(self._config.app_download_path,
                                                    self.app_name.replace("/", "_"), release.tag_name)
 
@@ -305,7 +308,7 @@ class GenericApp(AppStruct):
     def _patch(self):
         pass
 
-    def is_patched(self):
+    def is_patched(self) -> bool:
         pass
 
     @property
@@ -337,7 +340,7 @@ class WakeUpTool(AppStruct):
     def _patch(self):
         pass
 
-    def is_patched(self):
+    def is_patched(self) -> bool:
         pass
 
     @property
@@ -380,11 +383,94 @@ class WakeUpTool(AppStruct):
 
 
 class ReplayTakeover(AppStruct):
-    def is_patched(self):
-        pass
+    def is_patched(self) -> bool:
+        """
+        Check if files exists.
+        Check if BootGGXrd.bat contains the DelayReplayTakeover.bat script.
+        :return:
+        """
+        boot_xrd_bat = "BootGGXrd.bat"
+        delay_takeover_bat = "DelayReplayTakeover.bat"
+        files_to_contain = [
+            boot_xrd_bat,
+        ]
+        files_to_contain_binaries_win32 = [
+            "GGXrdReplayTakeover.dll",
+            "GGXrdReplayTakeoverInjector.exe",
+            delay_takeover_bat
+        ]
+
+        # Check DelayReplayTakeover.bat (and other files) exists (we are not checking contents anyway)
+        for file in files_to_contain:
+            file_path = pathlib.Path(self._config.xrd_path).joinpath(file)
+            if not (file_path.exists() and file_path.is_file()):
+                return False
+        for file in files_to_contain_binaries_win32:
+            file_path = pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(file)
+            if not (file_path.exists() and file_path.is_file()):
+                return False
+                # Check if the init script has the line, even if it's commented,
+        boot_xrd_path = pathlib.Path(self._config.xrd_path).joinpath(boot_xrd_bat)
+        boot_xrd_file = open(boot_xrd_path, 'r', encoding="utf-8")
+        for line in boot_xrd_file.readlines():
+            if line.find(delay_takeover_bat) >= 0:
+                return True
+        return False
 
     def _patch(self):
-        pass
+        """
+        Create/overwrite the DelayReplayTakeover.bat file.
+        Append the start of the bat at the bottom of the BootGGXrd.bat script.
+        :return:
+        """
+        delay_takeover_bat = "DelayReplayTakeover.bat"
+        takeover_injector = "GGXrdReplayTakeoverInjector.exe"
+        boot_xrd_bat = "BootGGXrd.bat"
+        files_to_copy_binaries_win32 = [
+            "GGXrdReplayTakeover.dll",
+            takeover_injector,
+        ]
+        bat_contents = """
+@echo off
+
+SET "CHECK_XRD=(tasklist /FI "IMAGENAME eq GuiltyGearXrd.exe" /FI "WINDOWTITLE eq Guilty Gear Xrd -REVELATOR-" | findstr GuiltyGearXrd.exe > NUL)"
+
+%CHECK_XRD% && goto :finish
+echo Waiting for Xrd to launch...
+FOR /L %%I IN (1,1,30) DO (
+  %CHECK_XRD% && goto :finish || (ping -n 2 127.0.0.1 > NU)
+)
+:finish
+%CHECK_XRD% && start {takeover_inector} || echo Xrd didn't launch...
+""".format(takeover_inector=takeover_injector)
+        # Check DelayReplayTakeover.bat
+        delay_takeover_path = pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(delay_takeover_bat)
+        with open(delay_takeover_path, 'w+', encoding="utf-8") as file:
+            file.write(bat_contents)
+
+        # Check BootGGXrd.bat
+        boot_xrd_path = pathlib.Path(self._config.xrd_path).joinpath(boot_xrd_bat)
+
+        # Skip if line exists (ie, when "upgrading/changing the version" of the mod.
+        append_to_boot_xrd = True
+        with open(boot_xrd_path, 'r', encoding="utf-8") as file:
+            for line in file.readlines():
+                if line.find(delay_takeover_bat) >= 0:
+                    append_to_boot_xrd = False
+        # Append line
+        if append_to_boot_xrd:
+            with open(boot_xrd_path, 'a', encoding="utf-8") as file:
+                file.write(f"start {delay_takeover_bat}\n")
+
+        # Copy exe and dll/files
+        for file in files_to_copy_binaries_win32:
+            source_file_path = pathlib.Path(self.current_release_files_path).joinpath(file)
+            destination_file_path = pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(file)
+            pathlib.Path(self._config.xrd_path).joinpath(boot_xrd_bat)
+            if source_file_path.exists() and source_file_path.is_file() and not destination_file_path.is_dir():
+                shutil.copy2(source_file_path, destination_file_path)
+            else:
+                raise Exception(f"File '{source_file_path}' couldn't be found.")
 
     @property
     def _executable_path(self) -> str:
@@ -431,7 +517,7 @@ class ReplayTakeover(AppStruct):
 
 
 class HitboxOverlay(AppStruct):
-    def is_patched(self):
+    def is_patched(self) -> bool:
         pass
 
     def _patch(self):

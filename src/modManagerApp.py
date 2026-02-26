@@ -30,6 +30,7 @@ class ModManagerApp(App):
         # Binding("i", "search_updates", "search_updates", show=True, priority=True), # Checks on boot
         Binding("s", "save_config", "save", show=True),
         Binding("l", "launch_mod", "launch", show=True),
+        Binding("p", "patch_mod", "patch", show=True),
         # Binding("f", "download_latest", "download_latest", show=True, priority=True),
         # Binding("c", "change_version", "change_version", show=True, priority=True),
     ]
@@ -130,7 +131,6 @@ class ModManagerApp(App):
 
     async def action_update_app_to_latest(self):
         # self.get_loading_widget()
-        # self.table.loading = True
         # with self.suspend():
         #     system("vim")
         # with self.suspend():
@@ -162,42 +162,42 @@ class ModManagerApp(App):
         if not download.done():
             # No clue under which circumstances this would occur but whatever
             self.notify("Failed to download the mod!", severity="error")
-            # self.table.loading = False
             return 0
 
-        # if not app.requires_install:
-        #     self.notify("Download completed.", severity="information")
-        # else:
+        # TODO Install step is useless. Remove
         self.notify("Download completed.\nStarting install step.", severity="information")
         async with asyncio.TaskGroup() as tg:
             install = tg.create_task(app.install_release(release=release))
 
         if not install.done():
             # No clue under which circumstances this would occur but whatever
-            self.notify("Failed to download the mod!", severity="error")
-            self.table.loading = False
+            # TODO capture exceptions ?
+            self.notify(f"Failed to download mod {app.app_name}", severity="error")
             return 0
 
         self.notify(f"Mod {app.app_name} installed.")
 
         self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
-        self.table.loading = False
 
-    # def action_patch_app(self):
-    #     app = self.selected_app
-    #     # TODO try except: show error window
-    #     # TODO maybe skipp if already patched?
-    #     if app.is_installed:
-    #         try:
-    #             app.patch()
-    #             self.__update_set_values(rows=app.app_name, columns=["patched"])
-    #
-    #         except Exception as e:
-    #             raise e
+    @work(exclusive=True)
+    async def action_patch_mod(self):
+        app = self.selected_app
+        # if app.is_patched():
 
-    # def action_download_latest(self):
-    #     app = self.selected_app
-    #     app.download_release(app.latest_release)
+        self.notify(f"Patching App: {app.app_name}",
+                    severity="warning")
+        async with asyncio.TaskGroup() as tg:
+            patch = tg.create_task(app.patch())
+
+        if not patch.done():
+            # No clue under which circumstances this would occur but whatever
+            # TODO capture exceptions ?
+            self.notify(f"Failed to patch mod {app.app_name}!", severity="error")
+            return 0
+
+        self.notify(f"Mod {app.app_name} patched.")
+
+        self.__update_set_values(rows=app.app_name, columns=["patched"])
 
     def __update_set_values(self, columns: str | [str] = None, rows: str | [str] = None) -> None:
         if columns is str:
@@ -223,7 +223,7 @@ class ModManagerApp(App):
                 "latest_version_available": app.latest_release_name,
                 # "latest_version_available": latest_release.name,
                 "installed": (NO, TRUE)[app.is_installed],
-                # "patched": (NO, TRUE)[app.is_patched],
+                "patched": (NO, TRUE)[app.is_patched()],
                 "description": app.description,
                 "up_to_date": (NO, TRUE)[app.up_to_date]
             }
