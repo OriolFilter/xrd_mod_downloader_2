@@ -148,13 +148,17 @@ class AppStruct(ABC):
 
     @property
     @abstractmethod
-    def _executable_path(self) -> str:
+    def _executable_name(self) -> str:
         """
         Returns the location of the .exe file or whatever that needs to be launched.
         Usually will be /app/tag/app.exe, but some might vary/have tag prefixes/suffixes.
         :return:
         """
         pass
+
+    @property
+    def _bat_file_name(self) -> str:
+        return "{}.bat".format(self.app_name.replace('/', ''))
 
     @property
     def up_to_date(self) -> bool:
@@ -255,7 +259,7 @@ class AppStruct(ABC):
             shell=False,
             args=[
                 wineloader,
-                self._executable_path,
+                f"{self.current_release_files_path}/{self._executable_name}",
                 *self._launch_extra_args,
             ],
             env=envs,
@@ -302,7 +306,7 @@ class AppStruct(ABC):
     #     pass
 
     def can_be_launched(self) -> bool:
-        return any(self._executable_path)
+        return any(self._executable_name)
 
 
 class GenericApp(AppStruct):
@@ -314,7 +318,7 @@ class GenericApp(AppStruct):
         return True
 
     @property
-    def _executable_path(self) -> str:
+    def _executable_name(self) -> str:
         pass
 
     def _install_release(self, release: GitRelease):
@@ -347,8 +351,8 @@ class WakeUpTool(AppStruct):
         return False
 
     @property
-    def _executable_path(self) -> str:
-        return f"{self.current_release_files_path}/GGXrdReversalTool.exe"
+    def _executable_name(self) -> str:
+        return "GGXrdReversalTool.exe"
 
     def _install_release(self, release: GitRelease):
         """
@@ -395,13 +399,13 @@ class ReplayTakeover(AppStruct):
         :return:
         """
         boot_xrd_bat = "BootGGXrd.bat"
-        delay_takeover_bat = "DelayReplayTakeover.bat"
+        delay_takeover_bat = self._bat_file_name
         files_to_contain = [
             boot_xrd_bat,
         ]
         files_to_contain_binaries_win32 = [
             "GGXrdReplayTakeover.dll",
-            self._executable_path,
+            self._executable_name,
             delay_takeover_bat
         ]
 
@@ -428,8 +432,8 @@ class ReplayTakeover(AppStruct):
         Append the start of the bat at the bottom of the BootGGXrd.bat script.
         :return:
         """
-        delay_takeover_bat = "DelayReplayTakeover.bat"
-        takeover_injector = self._executable_path
+        delay_takeover_bat = self._bat_file_name
+        takeover_injector = self._executable_name
         boot_xrd_bat = "BootGGXrd.bat"
         files_to_copy_binaries_win32 = [
             "GGXrdReplayTakeover.dll",
@@ -490,7 +494,7 @@ FOR /L %%I IN (1,1,30) DO (
                 raise Exception(f"File '{source_file_path}' couldn't be found.")
 
     @property
-    def _executable_path(self) -> str:
+    def _executable_name(self) -> str:
         return "GGXrdReplayTakeoverInjector.exe"
 
     def _install_release(self, release: GitRelease):
@@ -543,8 +547,8 @@ class HitboxOverlay(AppStruct):
         pass
 
     @property
-    def _executable_path(self) -> str:
-        return f"{self.current_release_files_path}/ggxrd_hitbox_injector.exe"
+    def _executable_name(self) -> str:
+        return f"ggxrd_hitbox_injector.exe"
 
     def _install_release(self, release: GitRelease):
         pass
