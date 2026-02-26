@@ -223,7 +223,7 @@ class ModManagerApp(App):
                 "latest_version_available": app.latest_release_name,
                 # "latest_version_available": latest_release.name,
                 "installed": (NO, TRUE)[app.is_installed],
-                "patched": (NO, TRUE)[app.is_patched()],
+                "patched": (NO, TRUE)[app.is_patched],
                 "description": app.description,
                 "up_to_date": (NO, TRUE)[app.up_to_date]
             }

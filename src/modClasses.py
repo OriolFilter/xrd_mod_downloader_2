@@ -73,12 +73,13 @@ class AppStruct(ABC):
     # def __patch_linux(self):
     #     raise NotImplementedError
 
+    @property
     @abstractmethod
     def is_patched(self) -> bool:
         pass
 
     async def patch(self):
-        if not self.is_patched():
+        if not self.is_patched:
             self._patch()
 
         # match sys.platform:
@@ -308,8 +309,9 @@ class GenericApp(AppStruct):
     def _patch(self):
         pass
 
+    @property
     def is_patched(self) -> bool:
-        pass
+        return True
 
     @property
     def _executable_path(self) -> str:
@@ -340,8 +342,9 @@ class WakeUpTool(AppStruct):
     def _patch(self):
         pass
 
+    @property
     def is_patched(self) -> bool:
-        pass
+        return False
 
     @property
     def _executable_path(self) -> str:
@@ -383,6 +386,8 @@ class WakeUpTool(AppStruct):
 
 
 class ReplayTakeover(AppStruct):
+
+    @property
     def is_patched(self) -> bool:
         """
         Check if files exists.
@@ -517,8 +522,10 @@ FOR /L %%I IN (1,1,30) DO (
 
 
 class HitboxOverlay(AppStruct):
+
+    @property
     def is_patched(self) -> bool:
-        pass
+        return False
 
     def _patch(self):
         pass
