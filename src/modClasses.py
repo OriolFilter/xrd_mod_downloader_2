@@ -6,6 +6,7 @@ import subprocess
 import sys
 import time
 from abc import ABC, abstractmethod
+from pathlib import Path
 from zipfile import ZipFile
 
 import psutil
@@ -77,9 +78,14 @@ class AppStruct(ABC):
         return self._bat_file_enabled and self._patch_files_exists
 
     @property
-    def _binaries_win32_self_folder(self) -> str:
-        # TODO USE
-        return pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(self.app_name.replace("/","_"))
+    def _win32_mod_folder_path(self) -> Path:
+        """
+        Returns the path for the Binaries/Win32/app_folder directory.
+
+
+        :return:
+        """
+        return pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(self.app_name.replace("/", "_"))
 
     @property
     def _patch_files_exists(self) -> bool:
@@ -92,15 +98,19 @@ class AppStruct(ABC):
         files_to_contain = [
             boot_xrd_bat,
         ]
-        files_to_contain_binaries_win32 = [self._bat_file_name] + self._required_files
+
+        # Check .bat exists
+        bat_path = pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(self._bat_file_name)
+        if not (bat_path.exists() and bat_path.is_file()):
+            return False
 
         # Check App.bat (and other files) exists (we are not checking contents anyway)
         for file in files_to_contain:
             file_path = pathlib.Path(self._config.xrd_path).joinpath(file)
             if not (file_path.exists() and file_path.is_file()):
                 return False
-        for file in files_to_contain_binaries_win32:
-            file_path = pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(file)
+        for file in self._required_files:
+            file_path = self._win32_mod_folder_path.joinpath(file)
             if not (file_path.exists() and file_path.is_file()):
                 return False
         return True
@@ -141,7 +151,7 @@ class AppStruct(ABC):
     def _patch(self):
         # TODO Move patching away/into a single bat file, instead of 10/per mod.
         """
-        Create/overwrite the DelayReplayTakeover.bat file.
+        Create/overwrite the DelayApp.bat file.
         Append the start of the bat at the bottom of the BootGGXrd.bat script.
         :return:
         """
@@ -157,13 +167,18 @@ FOR /L %%I IN (1,1,30) DO (
   %CHECK_XRD% && goto :finish || (ping -n 2 127.0.0.1 > NU)
 )
 :finish
-%CHECK_XRD% && start {takeover_inector} {extra_args} || echo Xrd didn't launch...
-""".format(takeover_inector=self._executable_name,
-           extra_args=" ".join(f'"{arg}"' for arg in self._launch_extra_args))
-        # Check DelayReplayTakeover.bat
-        delay_takeover_path = pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(
-            self._bat_file_name)
-        with open(delay_takeover_path, 'w+', encoding="utf-8") as file:
+%CHECK_XRD% && start {app_directory}/{takeover_inector} {extra_args} || echo Xrd didn't launch...
+""".format(
+            app_directory=self.app_name.replace("/", "_"),
+            takeover_inector=self._executable_name,
+            extra_args=" ".join(f'"{arg}"' for arg in self._launch_extra_args)
+        )
+        if not self._win32_mod_folder_path.exists():
+            self._win32_mod_folder_path.mkdir(parents=True)
+
+        # Check DelayApp.bat
+        bat_file_path = pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(self._bat_file_name)
+        with open(bat_file_path, 'w+', encoding="utf-8") as file:
             file.write(bat_contents)
 
         # Check BootGGXrd.bat
@@ -196,8 +211,8 @@ FOR /L %%I IN (1,1,30) DO (
 
         # Copy exe and dll/files
         for file in self._required_files:
-            source_file_path = pathlib.Path(self.current_release_files_path).joinpath(file)
-            destination_file_path = pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(file)
+            source_file_path = self.current_release_files_path.joinpath(file)
+            destination_file_path = self._win32_mod_folder_path.joinpath(file)
             pathlib.Path(self._config.xrd_path).joinpath(boot_xrd_bat)
             if source_file_path.exists() and source_file_path.is_file() and not destination_file_path.is_dir():
                 shutil.copy2(source_file_path, destination_file_path)
@@ -228,9 +243,8 @@ FOR /L %%I IN (1,1,30) DO (
         }
 
     @property
-    def current_release_files_path(self) -> str:
-        return "{}/{}/{}".format(self._config.app_download_path,
-                                 self.app_name.replace("/", "_"), self.tag_name)
+    def current_release_files_path(self) -> Path:
+        return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(self.tag_name)
 
     @property
     @abstractmethod
@@ -345,14 +359,14 @@ FOR /L %%I IN (1,1,30) DO (
             shell=False,
             args=[
                 wineloader,
-                f"{self.current_release_files_path}/{self._executable_name}",
+                self.current_release_files_path.joinpath(self._executable_name).absolute(),
                 *self._launch_extra_args,
             ],
             env=envs,
             stdin=None,
             stdout=DEVNULL,
             stderr=DEVNULL,
-            cwd=self.current_release_files_path,
+            cwd=self.current_release_files_path.absolute(),
             start_new_session=True,
         )
 
@@ -377,7 +391,7 @@ FOR /L %%I IN (1,1,30) DO (
 
         for file in self._required_files:
             # raise Exception(f"{self.current_release_files_path}/{file}")
-            if not os.path.isfile(f"{self.current_release_files_path}/{file}"):
+            if not self.current_release_files_path.joinpath(file).is_file():
                 return False
 
         return True
