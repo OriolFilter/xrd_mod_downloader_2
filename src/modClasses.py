@@ -75,7 +75,16 @@ class AppStruct(ABC):
 
     @property
     def is_patched(self) -> bool:
-        return any(self._config.xrd_path) and self._bat_file_enabled and self._patch_files_exists
+        """
+        Checking for xrd_path is to see if it's populated/found the xrd path.
+
+        Otherwise, there is no reason to.
+
+        Condition is (if autostart.bat patched or .exe patched) return true/false.
+
+        :return:
+        """
+        return any(self._config.xrd_path) and ((self._bat_file_enabled and self._patch_files_exists) or self._custom_is_patched)
 
     @property
     def _win32_mod_folder_path(self) -> Path:
@@ -86,6 +95,18 @@ class AppStruct(ABC):
         :return:
         """
         return pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(self.app_name.replace("/", "_"))
+
+    @property
+    def _custom_is_patched(self) -> bool:
+        """
+        Returns False.
+
+        Can be used/implemented to detect if the GuiltyGear.exe or something similar has been patched
+        Like with the hitbox viewer.
+
+        :return:
+        """
+        return False
 
     @property
     def _patch_files_exists(self) -> bool:
@@ -471,6 +492,20 @@ class ReplayTakeover(AppStruct):
 
 
 class HitboxOverlay(AppStruct):
+
+    @property
+    def _custom_is_patched(self) -> bool:
+        """
+        Code from kkots.
+        """
+
+        hardcoded_patch_place_raw = 0x970126
+        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        with open(xrd_exe_path, "r+b") as file:
+            file.seek(hardcoded_patch_place_raw)
+            if file.read(1) != b'\xe9':
+                return False
+        return True
 
     @property
     def _required_files(self) -> [str]:
