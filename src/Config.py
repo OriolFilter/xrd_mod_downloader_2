@@ -128,12 +128,12 @@ class GlobalConfig:
             if pid.name() == "GuiltyGearXrd.exe":
                 xrd_process = pid
                 break
-        del pid
-
-        return xrd_process.environ().get("PWD")
+        if xrd_process:
+            return xrd_process.environ().get("PWD")
 
     def __find_xrd_process_by_folders(self) -> str:
         # 2. Find Xrd by checking folders (only one path known right now on linux)
+        # TODO forgot about this
         possible_paths = ["{HOME}/.steam/root/config/libraryfolders.vdf"]
         for path in possible_paths:
             self.__check_xrd_path_is_valid(path.format(

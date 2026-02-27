@@ -25,11 +25,11 @@ class AppStruct(ABC):
     _config: object
     repo_owner: str
     repo_name: str
-    release_id: str | None = None
-    tag_name: str | None = None
-    published_at: str | None = None
+    release_id: str | None = ""
+    tag_name: str | None = ""
+    published_at: str | None = ""
     # app_type: str # Shouldn't be necessary/helpful.
-    url_source_release: str | None = None
+    url_source_release: str | None = ""
     description: str = ""
     __latest_release_available: GitRelease = None
 
@@ -75,7 +75,7 @@ class AppStruct(ABC):
 
     @property
     def is_patched(self) -> bool:
-        return self._bat_file_enabled and self._patch_files_exists
+        return any(self._config.xrd_path) and self._bat_file_enabled and self._patch_files_exists
 
     @property
     def _win32_mod_folder_path(self) -> Path:
