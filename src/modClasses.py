@@ -167,7 +167,7 @@ FOR /L %%I IN (1,1,30) DO (
   %CHECK_XRD% && goto :finish || (ping -n 2 127.0.0.1 > NU)
 )
 :finish
-%CHECK_XRD% && start {app_directory}/{takeover_inector} {extra_args} || echo Xrd didn't launch...
+%CHECK_XRD% && start /MIN {app_directory}/{takeover_inector} {extra_args} || echo Xrd didn't launch...
 """.format(
             app_directory=self.app_name.replace("/", "_"),
             takeover_inector=self._executable_name,
