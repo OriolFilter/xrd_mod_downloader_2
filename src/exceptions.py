@@ -18,8 +18,13 @@ class WinePrefixNotFound(Exception):
 
 class XrdFolderNotFound(Exception):
     """
-    Raised when the Xrd Folder is not located
+    Raised when the Xrd Folder is not located at the boot of the program.
     """
+    def __init__(self):
+        super().__init__(f"Couldn't locate the Xrd folder.\n"
+                         f"Your system might be different than those implemented so far.\n"
+                         f"Either create an issue, or have Xrd open at the start of this program.\n"
+                         f"You only need to do this once until you save the config.")
 
 
 class XrdFolderNotValid(Exception):
