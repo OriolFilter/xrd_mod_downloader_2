@@ -233,11 +233,14 @@ class ModManagerApp(App):
             # time.sleep(0.50)
             # latest_release = app.get_latest_release_available()
             # latest_release = "paco"
+            if app.tag_name != app.latest_release_name:
+                tag_name_message = Text(app.tag_name, style="#d8db23 bold")
+            else:
+                tag_name_message = Text(app.tag_name, style="#32a852")
             app_info = {
                 "app_name": app.app_name,
-                "tag_name": app.tag_name,
+                "tag_name": tag_name_message,
                 "latest_version_available": app.latest_release_name,
-                # "latest_version_available": latest_release.name,
                 "installed": (NO, TRUE)[app.is_installed],
                 "patched": (NO, TRUE)[app.is_patched],
                 "description": app.description,
