@@ -35,6 +35,10 @@ class GlobalConfig:
             # AppStruct(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", _config=self),
             # AppStruct(repo_name="GGXrdMirrorColorSelect", repo_owner="kkots", _config=self),
             # AppStruct(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots", _config=self),
+            # GGXrdChangeBorderlessWindowPos idk about this one
+            # https://github.com/kkots/GGXrdAutomaticallyChangeAudioDevice
+            # https://github.com/kkots/GGXrdDisplayPing
+            # https://github.com/kkots/GGXrdAdjustConnectionTiers  idk about this one
         ]
 
         for mod in mod_list:
