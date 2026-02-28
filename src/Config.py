@@ -131,14 +131,32 @@ class GlobalConfig:
         if xrd_process:
             return xrd_process.environ().get("PWD")
 
-    def __find_xrd_process_by_folders(self) -> str:
+    def __find_xrd_process_by_vdf_files(self) -> str:
         # 2. Find Xrd by checking folders (only one path known right now on linux)
-        # TODO forgot about this
+
         possible_paths = ["{HOME}/.steam/root/config/libraryfolders.vdf"]
-        for path in possible_paths:
-            self.__check_xrd_path_is_valid(path.format(
+        for path_str in possible_paths:
+            path_file = Path(path_str.format(
                 HOME=os.getenv("HOME"),
             ))
+            if path_file.exists():
+                with open(path_file.__str__(), "r", encoding="utf-8") as file:
+                    last_path = ""
+                    for line in file:
+                        text = line.lstrip()
+                        # Find path line
+                        if text.startswith('"path"'):
+                            tmp_line = text.removeprefix('"path"')
+                            tmp_path = tmp_line.lstrip().rstrip()
+
+                            # Find steam library path
+                            if tmp_path.startswith('"') and tmp_path.endswith('"') and len(tmp_path) > 2:
+                                last_path = tmp_path.removeprefix('"').removesuffix('"')
+
+                        # Find Xrd line
+                        elif text.startswith('"520440"'):
+                            return f"{last_path}/steamapps/common/GUILTY GEAR Xrd -REVELATOR-"
+
         return ""
 
     @property
@@ -147,7 +165,7 @@ class GlobalConfig:
             pass
         elif path := self.__find_xrd_location_if_open():
             self.xrd_path = path
-        elif path := self.__find_xrd_process_by_folders():
+        elif path := self.__find_xrd_process_by_vdf_files():
             self.__xrd_path = path
         else:
             raise XrdFolderNotFound
