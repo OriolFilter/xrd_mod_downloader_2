@@ -1,6 +1,5 @@
 import dataclasses
 import os.path
-import pathlib
 import shutil
 import subprocess
 import sys
@@ -67,7 +66,7 @@ class AppStruct(ABC):
         :return: 
         """
         boot_xrd_bat = "BootGGXrd.bat"
-        boot_xrd_path = pathlib.Path(self._config.xrd_path).joinpath(boot_xrd_bat)
+        boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
         with open(boot_xrd_path, 'r', encoding="utf-8") as boot_xrd_file:
             for line in boot_xrd_file.readlines():
                 if line.startswith((f"start {self._bat_file_name}")):
@@ -96,7 +95,7 @@ class AppStruct(ABC):
 
         :return:
         """
-        return pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(self.app_name.replace("/", "_"))
+        return Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(self.app_name.replace("/", "_"))
 
     @property
     def _custom_is_patched(self) -> bool:
@@ -130,13 +129,13 @@ class AppStruct(ABC):
         ]
 
         # Check .bat exists
-        bat_path = pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(self._bat_file_name)
+        bat_path = Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(self._bat_file_name)
         if not (bat_path.exists() and bat_path.is_file()):
             return False
 
         # Check App.bat (and other files) exists (we are not checking contents anyway)
         for file in files_to_contain:
-            file_path = pathlib.Path(self._config.xrd_path).joinpath(file)
+            file_path = Path(self._config.xrd_path).joinpath(file)
             if not (file_path.exists() and file_path.is_file()):
                 return False
         for file in self._required_files:
@@ -161,7 +160,7 @@ class AppStruct(ABC):
         :return:
         """
         boot_xrd_bat = "BootGGXrd.bat"
-        boot_xrd_path = pathlib.Path(self._config.xrd_path).joinpath(boot_xrd_bat)
+        boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
         new_file_contents: [str] = []
         with open(boot_xrd_path, 'r', encoding="utf-8") as file:
             for line in file:
@@ -209,12 +208,12 @@ FOR /L %%I IN (1,1,30) DO (
             self._win32_mod_folder_path.mkdir(parents=True)
 
         # Check DelayApp.bat
-        bat_file_path = pathlib.Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(self._bat_file_name)
+        bat_file_path = Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(self._bat_file_name)
         with open(bat_file_path, 'w+', encoding="utf-8") as file:
             file.write(bat_contents)
 
         # Check BootGGXrd.bat
-        boot_xrd_path = pathlib.Path(self._config.xrd_path).joinpath(boot_xrd_bat)
+        boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
 
         new_file_contents: [str] = []
         with open(boot_xrd_path, 'r', encoding="utf-8") as file:
@@ -245,7 +244,7 @@ FOR /L %%I IN (1,1,30) DO (
         for file in self._required_files:
             source_file_path = self.current_release_files_path.joinpath(file)
             destination_file_path = self._win32_mod_folder_path.joinpath(file)
-            pathlib.Path(self._config.xrd_path).joinpath(boot_xrd_bat)
+            Path(self._config.xrd_path).joinpath(boot_xrd_bat)
             if source_file_path.exists() and source_file_path.is_file() and not destination_file_path.is_dir():
                 shutil.copy2(source_file_path, destination_file_path)
             else:
@@ -374,7 +373,7 @@ FOR /L %%I IN (1,1,30) DO (
         envs = xrd_process.environ()
 
         wineloader = envs.get("WINELOADER")
-
+        #
         if not wineloader:
             raise WineLoaderNotFound
 
@@ -531,9 +530,20 @@ class HitboxOverlay(AppStruct):
 
     @property
     def _executable_name(self) -> str:
-        # "ggxrd_hitbox_injector.exe",
-        # "ggxrd_hitbox_injector64bit.exe",
-        # TODO why the 64 again?
+        """
+        If syswow64 is found, use the 64bit injector, else the 32.
+        :return: str
+        """
+
+        # Get to the steam "root" folder
+        # /home/$HOME/.local/share/Steam/steamapps
+        steam_apps_path = Path(self._config.xrd_path).parent.parent.parent
+
+        drivec_windows_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/windows")
+        if drivec_windows_path.exists() and drivec_windows_path.is_dir():
+            if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath('syswow64'):
+                return "ggxrd_hitbox_injector64bit.exe"
+
         return "ggxrd_hitbox_injector.exe"
 
     def _get_assets_whitelist(self, release: GitRelease) -> [str]:
