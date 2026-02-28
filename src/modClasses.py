@@ -16,6 +16,7 @@ from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
 
 from subprocess import Popen, DEVNULL
 
+from functions import unpatch_hitbox_overlay_exe
 
 # from Config import GlobalConfig
 
@@ -108,6 +109,13 @@ class AppStruct(ABC):
         """
         return False
 
+    def _custom_unpatch(self):
+        """
+        Can be used/implemented to unpatch the .exe or doing whatever.
+        Like with the hitbox viewer.
+        """
+        pass
+
     @property
     def _patch_files_exists(self) -> bool:
         """
@@ -142,6 +150,9 @@ class AppStruct(ABC):
 
     async def disable_patch(self):
         """Toggle start on boot for the mod"""
+        if self._custom_is_patched:
+            self._custom_unpatch()
+
         self._disable_patch()
 
     def _disable_patch(self):
@@ -506,6 +517,9 @@ class HitboxOverlay(AppStruct):
             if file.read(1) != b'\xe9':
                 return False
         return True
+
+    def _custom_unpatch(self):
+        unpatch_hitbox_overlay_exe(Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe"))
 
     @property
     def _required_files(self) -> [str]:
