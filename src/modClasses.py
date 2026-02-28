@@ -18,6 +18,7 @@ from subprocess import Popen, DEVNULL
 
 from functions import unpatch_hitbox_overlay_exe
 
+
 # from Config import GlobalConfig
 
 
@@ -28,7 +29,6 @@ class AppStruct(ABC):
     repo_name: str
     release_id: str | None = ""
     tag_name: str | None = ""
-    published_at: str | None = ""
     # app_type: str # Shouldn't be necessary/helpful.
     url_source_release: str | None = ""
     description: str = ""
@@ -85,7 +85,8 @@ class AppStruct(ABC):
 
         :return:
         """
-        return any(self._config.xrd_path) and ((self._bat_file_enabled and self._patch_files_exists) or self._custom_is_patched)
+        return any(self._config.xrd_path) and (
+                    (self._bat_file_enabled and self._patch_files_exists) or self._custom_is_patched)
 
     @property
     def _win32_mod_folder_path(self) -> Path:
@@ -145,7 +146,6 @@ class AppStruct(ABC):
         return True
 
     async def patch(self):
-        # TODO unpatch binary if available.
         self._patch()
 
     async def disable_patch(self):
@@ -257,18 +257,19 @@ FOR /L %%I IN (1,1,30) DO (
         :param release:
         :return:
         """
-        self.published_at = release.published_at
         self.url_source_release = release.url
         self.tag_name = release.tag_name
         self.release_id = release.id
-        # await asyncio.sleep(3)
+        if self.is_patched:
+            if self._custom_is_patched:
+                self._custom_unpatch()
+            await self.patch()
         return True
 
     def export_config_dict(self) -> {str: str | int | None | bool}:
         return {
             "release_id": self.release_id,
             "tag_name": self.tag_name,
-            # "published_at": self.published_at, # TODO datetime
             "url_source_release": self.url_source_release,
             # "enabled": self.enabled,
             # "hidden": self.hidden,
@@ -309,9 +310,8 @@ FOR /L %%I IN (1,1,30) DO (
         files_to_download: [GitReleaseAsset] = []
         assets_whitelist = self._get_assets_whitelist(release=release)
 
-        # TODO move to pathlib lib
-        new_release_files_path = "{}/{}/{}".format(self._config.app_download_path,
-                                                   self.app_name.replace("/", "_"), release.tag_name)
+        new_release_files_path = Path(self._config.app_download_path).joinpath(
+            self.app_name.replace("/", "_")).joinpath(release.tag_name)
 
         release: GitRelease
         for asset in release.assets:
@@ -534,7 +534,7 @@ class HitboxOverlay(AppStruct):
         # "ggxrd_hitbox_injector.exe",
         # "ggxrd_hitbox_injector64bit.exe",
         # TODO why the 64 again?
-        return f"ggxrd_hitbox_injector.exe"
+        return "ggxrd_hitbox_injector.exe"
 
     def _get_assets_whitelist(self, release: GitRelease) -> [str]:
         assets_whitelist = ["ggxrd_hitbox_overlay.zip"]

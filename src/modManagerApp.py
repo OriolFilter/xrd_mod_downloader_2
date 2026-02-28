@@ -130,14 +130,6 @@ class ModManagerApp(App):
     #         raise e
 
     async def action_update_app_to_latest(self):
-        # self.get_loading_widget()
-        # with self.suspend():
-        #     system("vim")
-        # with self.suspend():
-        # TODO try except: show error window
-        # TODO set rate limit
-        # self.run_worker(self.__update_app(self.selected_app), exclusive=True)
-        # self.__update_app_to_release(app=self.selected_app)
         self.__update_app_to_release()
 
     @work(exclusive=True)
