@@ -1,12 +1,9 @@
 services:
-  linux:
-    image: alpine
-#    command: id
-    command: sleep 6000 #/bin/ash /entrypoint.sh
+  debian:
+    image: python:3.14-trixie
+    command: /entrypoint.sh
     volumes:
-      - ./dockerout:/dataout:rw
-      - ./bash_linux.sh:/entrypoint.sh:ro
+      - ./binary_dump:/binary_dump:rw
+      - ./debian_entrypoint.sh:/entrypoint.sh:ro
       - ./requirements.txt:/requirements.txt:ro
       - ./src:/src:ro
-#    user: 1000:1000
-#  --paths venv/lib/python3.14/site-packages
