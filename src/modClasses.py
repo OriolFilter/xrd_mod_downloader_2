@@ -640,6 +640,10 @@ class StandAloneExe(AppStruct, ABC):
 
 class VsRedistributable(StandAloneExe):
     @property
+    def _desired_tag_name(self) -> str:
+        return "17"
+
+    @property
     def _download_files_url(self) -> [str]:
         return [f"https://aka.ms/vs/17/release/{self._executable_name}"]
 
