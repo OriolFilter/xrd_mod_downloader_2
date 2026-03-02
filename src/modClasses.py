@@ -36,6 +36,8 @@ class AppStruct(ABC):
     description: str = ""
     __latest_release_available: GitRelease = None
 
+    # _requires_xrd_running_to_launch = True
+
     @property
     def app_name(self) -> str:
         return "{}/{}".format(self.repo_owner, self.repo_name)
@@ -360,7 +362,7 @@ FOR /L %%I IN (1,1,30) DO (
 
     def _launch(self):
         """
-        Launch .exe RN this assumes you are on Linux
+        # TODO
         """
 
         xrd_process = None
@@ -588,7 +590,7 @@ class HitboxOverlay(AppStruct):
         return ["-force"]
 
 
-class StandAloneExe(AppStruct, ABC):
+class StandAloneExeRequirement(AppStruct, ABC):
 
     @property
     @abstractmethod
@@ -602,31 +604,29 @@ class StandAloneExe(AppStruct, ABC):
 
     @property
     @abstractmethod
-    def _download_files_url(self) -> [str]:
+    def _download_file_url(self) -> str:
         """
-        List of URL to download.
+        URL of the file to download.
         :return:
         """
-        return []
+        return ""
 
     @property
     def is_patched(self) -> bool:
         return self.is_installed
 
-    def download_release(self, _: object):
-        if len(self.tag_name) < 1:
+    async def download_release(self, release: object):
+        if len(self._download_file_url) < 1:
             raise Exception(
-                "App '{}' no files matched the criteria to be Download.".format(
+                "App has '{}' no available to download.".format(
                     self.__class__)
             )
 
-        downloads_files_path = Path(self._config.app_download_path).joinpath(
-            self.app_name.replace("/", "_")).joinpath()
+        downloads_files_path = self.current_release_files_path
+        if not downloads_files_path.exists():
+            downloads_files_path.mkdir(parents=True)
 
-        for url in self.url_source_release:
-            split = urlsplit(url)
-            file_destination_path = downloads_files_path.joinpath(split[-1])
-            urllib.request.urlretrieve(url, file_destination_path)
+        urllib.request.urlretrieve(self._download_file_url, downloads_files_path.joinpath(self._executable_name))
 
     @property
     def _required_files(self) -> [str]:
@@ -635,15 +635,92 @@ class StandAloneExe(AppStruct, ABC):
     def _get_assets_whitelist(self, release: GitRelease) -> [str]:
         raise NotImplementedError
 
+    @property
+    def latest_release(self) -> None:
+        return
 
-class VsRedistributable(StandAloneExe):
+    async def install_release(self, release: GitRelease) -> bool:
+        """
+        Execute the .exe
+
+        Wait for it to finish.
+
+        Change values
+        """
+        self.launch()
+        self.url_source_release = self.url_source_release
+        self.tag_name = self.latest_release_name
+        self.release_id = self.latest_release_name
+        return True
+
+    @property
+    def current_release_files_path(self) -> Path:
+        return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(self.latest_release_name)
+
+    def _launch(self):
+        """
+        Launch the .exe
+
+        Wait for it to finish/close.
+        """
+
+        # match sys.platform:
+        #     case 'linux':
+        #         envs = xrd_process.environ()
+        #         wineloader = envs.get("WINELOADER")
+        #         #
+        #         if not wineloader:
+        #             raise WineLoaderNotFound
+        #
+        #         wineprefix = envs.get("WINEPREFIX")
+        #         if not wineprefix:
+        #             raise WinePrefixNotFound
+        #
+        #         envs = {
+        #             "WINEFSYNC": "1",
+        #             "WINEPREFIX": wineprefix,
+        #             "DISPLAY": envs.get("DISPLAY")
+        #         }
+        #
+        #         subprocess.Popen(
+        #             shell=False,
+        #             args=[
+        #                 wineloader,
+        #                 self.current_release_files_path.joinpath(self._executable_name).absolute(),
+        #                 *self._launch_extra_args,
+        #             ],
+        #             env=envs,
+        #             stdin=None,
+        #             stdout=DEVNULL,
+        #             stderr=DEVNULL,
+        #             cwd=self.current_release_files_path.absolute(),
+        #             start_new_session=True,
+        #         )
+
+        process = subprocess.Popen(
+                    shell=False,
+                    args=[
+                        #                                         wineloader,
+                        self.current_release_files_path.joinpath(self._executable_name).absolute(),
+                        *self._launch_extra_args,
+                    ],
+                    stdin=None,
+                    stdout=DEVNULL,
+                    stderr=DEVNULL,
+                    cwd=self.current_release_files_path.absolute(),
+                    start_new_session=True,
+                )
+        process.wait()
+
+
+class VsRedistributable(StandAloneExeRequirement):
     @property
     def latest_release_name(self) -> str:
-         return "17"
+        return "17"
 
     @property
-    def _download_files_url(self) -> [str]:
-        return [f"https://aka.ms/vs/17/release/{self._executable_name}"]
+    def _download_file_url(self) -> str:
+        return f"https://aka.ms/vs/17/release/{self._executable_name}"
 
     # https://aka.ms/vs/17/release/vc_redist.x64.exe
     # https://aka.ms/vs/17/release/vc_redist.x32.exe

@@ -105,7 +105,6 @@ class ModManagerApp(App):
             #     self.notify(f"Can't launch app {app.app_name}.\nError: {e}.",
             #                 severity="error")
 
-
     def compose(self) -> ComposeResult:
         # Footer to show keys
         self.table = DataTable(zebra_stripes=True, cursor_type="row",
@@ -146,7 +145,7 @@ class ModManagerApp(App):
         if release is None:
             release = app.latest_release
         # TODO check if its already download, skipp download if exists
-        self.notify(f"Starting download.\nApp: {app.app_name}\nRelease: {release.name}",
+        self.notify(f"Starting download.\nApp: {app.app_name}\nRelease: {app.latest_release_name}",
                     severity="warning")
         async with asyncio.TaskGroup() as tg:
             download = tg.create_task(app.download_release(release=release))

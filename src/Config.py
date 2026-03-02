@@ -24,10 +24,10 @@ class GlobalConfig:
         # C++ redistrib
         # DotNet
         mod_list = [
-            HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
-                          repo_owner="kkots",
-                          description="Hitbox/framedata viewer mod",
-                          _config=self),
+            # HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
+            #               repo_owner="kkots",
+            #               description="Hitbox/framedata viewer mod",
+            #               _config=self),
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
             # ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self),
@@ -46,6 +46,10 @@ class GlobalConfig:
             case 'linux':
                 # Dotnet
                 # TODO
+                # TEST
+                mod_list.append(
+                    VsRedistributable(repo_owner="Microsoft", repo_name="Visual_CPP_Redistributable", _config=self,
+                                      description="Required to launch most mods."))
                 pass
             case "win32":
                 mod_list.append(
