@@ -15,7 +15,7 @@ from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
 
 from subprocess import Popen, DEVNULL
 
-from functions import unpatch_hitbox_overlay_exe
+from functions import unpatch_hitbox_overlay_exe, is_redist_x64_installed, is_redist_x86_installed
 
 import urllib.request
 from urllib.parse import urlsplit
@@ -502,10 +502,6 @@ class WakeUpTool(AppStruct):
 
         return assets_whitelist
 
-    def _install(self):
-        pass
-
-
 class ReplayTakeover(AppStruct):
 
     @property
@@ -563,6 +559,8 @@ class HitboxOverlay(AppStruct):
     def _executable_name(self) -> str:
         """
         If syswow64 is found, use the 64bit injector, else the 32.
+
+        If not linux or windows raise error.
         :return: str
         """
 
@@ -576,13 +574,12 @@ class HitboxOverlay(AppStruct):
                 if drivec_windows_path.exists() and drivec_windows_path.is_dir():
                     if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath('syswow64'):
                         return "ggxrd_hitbox_injector64bit.exe"
+                return "ggxrd_hitbox_injector.exe"
 
             case 'win32':
-                # Just check the arch
-                # is redist32 installed?
-                # is redist64 installed?
-                # are we in 64 bit?
-                # else
+                from sys import maxsize
+                if maxsize is 2**32:
+                    return "ggxrd_hitbox_injector64bit.exe"
                 return "ggxrd_hitbox_injector.exe"
 
             case _:
@@ -669,15 +666,24 @@ class StandAloneExeRequirement(AppStruct, ABC):
         return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(
             self.latest_release_name)
 
+    def patch(self):
+        self.launch()
+
+    def launch(self) -> None:
+        if self._is_installed:
+            raise Exception("Once App {} is installed, it cannot be uninstalled nor patched")
+        self._launch()
+
     def _launch(self):
         """
         Launch the .exe
 
         Wait for it to finish/close.
         """
-
-        # match sys.platform:
-        #     case 'linux':
+        # TODO Linux
+        match sys.platform:
+            case 'linux':
+                raise NotImplementedError(f"Launch app {self.__class__}")
         #         envs = xrd_process.environ()
         #         wineloader = envs.get("WINELOADER")
         #         #
@@ -708,36 +714,53 @@ class StandAloneExeRequirement(AppStruct, ABC):
         #             cwd=self.current_release_files_path.absolute(),
         #             start_new_session=True,
         #         )
-
-        process = subprocess.Popen(
-            shell=False,
-            args=[
-                #                                         wineloader,
-                self.current_release_files_path.joinpath(self._executable_name).absolute(),
-                *self._launch_extra_args,
-            ],
-            stdin=None,
-            stdout=DEVNULL,
-            stderr=DEVNULL,
-            cwd=self.current_release_files_path.absolute(),
-            start_new_session=True,
-        )
+            case 'win32':
+                process = subprocess.Popen(
+                    shell=False,
+                    args=[
+                        #                                         wineloader,
+                        self.current_release_files_path.joinpath(self._executable_name).absolute(),
+                        *self._launch_extra_args,
+                    ],
+                    stdin=None,
+                    stdout=DEVNULL,
+                    stderr=DEVNULL,
+                    cwd=self.current_release_files_path.absolute(),
+                    start_new_session=True,
+                )
         process.wait()
 
-
-class VsRedistributable(StandAloneExeRequirement):
     @property
-    def latest_release_name(self) -> str:
-        return "17"
+    def is_installed(self)->bool:
+        return self._is_installed
+
+class VsRedistributableBase(StandAloneExeRequirement, ABC):
+    @property
+    def _launch_extra_args(self) -> [str]:
+        return ["/install", "/quiet", "/norestart"]
 
     @property
     def _download_file_url(self) -> str:
         return f"https://aka.ms/vs/17/release/{self._executable_name}"
 
-    # https://aka.ms/vs/17/release/vc_redist.x64.exe
-    # https://aka.ms/vs/17/release/vc_redist.x32.exe
+    @property
+    def latest_release_name(self) -> str:
+        return "17"
 
+class VsRedistributable64(VsRedistributableBase):
     @property
     def _executable_name(self) -> str:
-        # TODO 32Bit
         return "vc_redist.x64.exe"
+
+    @property
+    def _is_installed(self)->bool:
+        return is_redist_x64_installed()
+
+class VsRedistributable86(VsRedistributableBase):
+    @property
+    def _executable_name(self) -> str:
+        return "vc_redist.x86.exe"
+
+    @property
+    def _is_installed(self)->bool:
+        return is_redist_x86_installed()

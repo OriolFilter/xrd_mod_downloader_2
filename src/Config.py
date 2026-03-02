@@ -6,7 +6,7 @@ from pathlib import Path
 import psutil
 from github import Github
 
-from modClasses import AppStruct, WakeUpTool, HitboxOverlay, ReplayTakeover, VsRedistributable
+from modClasses import AppStruct, WakeUpTool, HitboxOverlay, ReplayTakeover, VsRedistributable64, VsRedistributable86
 from exceptions import XrdFolderNotValid, XrdFolderNotFound
 
 
@@ -24,12 +24,12 @@ class GlobalConfig:
         # C++ redistrib
         # DotNet
         mod_list = [
-            # HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
-            #               repo_owner="kkots",
-            #               description="Hitbox/framedata viewer mod",
-            #               _config=self),
-            # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
-            # ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
+#             HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
+#                           repo_owner="kkots",
+#                           description="Hitbox/framedata viewer mod",
+#                           _config=self),
+#             WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
+            ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self),
             # #Iquis would need to verify download differenlty
 
@@ -47,13 +47,16 @@ class GlobalConfig:
                 # Dotnet
                 # TODO
                 # TEST
-                mod_list.append(
-                    VsRedistributable(repo_owner="Microsoft", repo_name="Visual_CPP_Redistributable", _config=self,
-                                      description="Required to launch most mods."))
+#                 mod_list.append(
+#                     VsRedistributable64(repo_owner="Microsoft", repo_name="Visual_CPP_Redistributable", _config=self,
+#                                       description="Required to launch most mods."))
                 pass
             case "win32":
                 mod_list.append(
-                    VsRedistributable(repo_owner="Microsoft", repo_name="Visual_CPP_Redistributable", _config=self,
+                    VsRedistributable64(repo_owner="Microsoft", repo_name="VsCppRedist_x64", _config=self,
+                                      description="Required to launch most mods."))
+                mod_list.append(
+                    VsRedistributable86(repo_owner="Microsoft", repo_name="VsCppRedist_x86", _config=self,
                                       description="Required to launch most mods."))
             case _:
                 pass
@@ -169,6 +172,8 @@ class GlobalConfig:
             case "win32":
                 possible_paths = ["C:/Program Files (x86)/Steam/steamapps/libraryfolders.vdf"]
                 # TODO
+                # Winreg from the Xrd app
+                # Winreg from the steam app page
                 # Hardcoded path. It's ugly. Whatever for now.
             case _:
                 raise NotImplementedError(f"OS {sys.platform} is currently not implemented.")
@@ -202,6 +207,7 @@ class GlobalConfig:
         if self.__xrd_path:
             pass
         elif path := self.__find_xrd_location_if_open():
+            raise Exception(path)
             self.xrd_path = path
         elif path := self.__find_xrd_process_by_vdf_files():
             self.__xrd_path = path

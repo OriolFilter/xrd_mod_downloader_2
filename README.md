@@ -24,3 +24,12 @@ Probs "goto" themes:
 - nord
 - textual-dark
 - flexoki
+
+
+Windows registry for steam
+
+Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Classes\steam\Shell\Open\Command
+"C:\Program Files (x86)\Steam\steam.exe" -- "%1"
+
+Computer\HKEY_CURRENT_USER\SOFTWARE\Valve\Steam
+c:/program files (x86)/steam
