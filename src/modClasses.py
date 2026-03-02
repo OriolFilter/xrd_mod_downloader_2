@@ -594,7 +594,7 @@ class StandAloneExe(AppStruct, ABC):
 
     @property
     @abstractmethod
-    def _desired_tag_name(self) -> str:
+    def latest_release_name(self) -> str:
         """
         Return the desired target version.
         It's not relevant but to simplify some stuff...
@@ -639,9 +639,9 @@ class StandAloneExe(AppStruct, ABC):
 
 
 class VsRedistributable(StandAloneExe):
-    @property
-    def _desired_tag_name(self) -> str:
-        return "17"
+    # @property
+    # def _desired_tag_name(self) -> str:
+    #     return "17"
 
     @property
     def _download_files_url(self) -> [str]:
