@@ -226,7 +226,7 @@ FOR /L %%I IN (1,1,30) DO (
                     new_file_contents.append(f":: {line}")
                 elif len(self._bat_file_name) > 0 and line.startswith(f":: start {self._bat_file_name}"):
                     # If bat exists but is commented uncomment
-                    new_file_contents.append(f"start {self._bat_file_name}\n")
+                    new_file_contents.append(f"\nstart {self._bat_file_name}\n")
                 else:
                     new_file_contents.append(line)
 
@@ -235,7 +235,7 @@ FOR /L %%I IN (1,1,30) DO (
                     append_to_boot_xrd = False
             # Append boot.bat
             if append_to_boot_xrd:
-                new_file_contents.append(f"start {self._bat_file_name}\n")
+                new_file_contents.append(f"\nstart {self._bat_file_name}")
 
         with open(boot_xrd_path, "w", encoding="utf-8") as file:
             file.writelines(new_file_contents)
@@ -370,36 +370,56 @@ FOR /L %%I IN (1,1,30) DO (
         if not xrd_process:
             raise XrdNotRunning
 
-        envs = xrd_process.environ()
+        match sys.platform:
+            case 'linux':
+                envs = xrd_process.environ()
+                wineloader = envs.get("WINELOADER")
+                #
+                if not wineloader:
+                    raise WineLoaderNotFound
 
-        wineloader = envs.get("WINELOADER")
-        #
-        if not wineloader:
-            raise WineLoaderNotFound
+                wineprefix = envs.get("WINEPREFIX")
+                if not wineprefix:
+                    raise WinePrefixNotFound
 
-        wineprefix = envs.get("WINEPREFIX")
-        if not wineprefix:
-            raise WinePrefixNotFound
+                envs = {
+                    "WINEFSYNC": "1",
+                    "WINEPREFIX": wineprefix,
+                    "DISPLAY": envs.get("DISPLAY")
+                }
 
-        envs = {
-            "WINEFSYNC": "1",
-            "WINEPREFIX": wineprefix,
-            "DISPLAY": envs.get("DISPLAY")
-        }
-        subprocess.Popen(
-            shell=False,
-            args=[
-                wineloader,
-                self.current_release_files_path.joinpath(self._executable_name).absolute(),
-                *self._launch_extra_args,
-            ],
-            env=envs,
-            stdin=None,
-            stdout=DEVNULL,
-            stderr=DEVNULL,
-            cwd=self.current_release_files_path.absolute(),
-            start_new_session=True,
-        )
+                subprocess.Popen(
+                    shell=False,
+                    args=[
+                        wineloader,
+                        self.current_release_files_path.joinpath(self._executable_name).absolute(),
+                        *self._launch_extra_args,
+                    ],
+                    env=envs,
+                    stdin=None,
+                    stdout=DEVNULL,
+                    stderr=DEVNULL,
+                    cwd=self.current_release_files_path.absolute(),
+                    start_new_session=True,
+                )
+            case "win32":
+                subprocess.Popen(
+                                    shell=False,
+                                    args=[
+#                                         wineloader,
+                                        self.current_release_files_path.joinpath(self._executable_name).absolute(),
+                                        *self._launch_extra_args,
+                                    ],
+                                    stdin=None,
+                                    stdout=DEVNULL,
+                                    stderr=DEVNULL,
+                                    cwd=self.current_release_files_path.absolute(),
+                                    start_new_session=True,
+                                )
+            case _:
+                raise NotImplementedError(f"OS {sys.platform} is currently not implemented.")
+
+
 
     @property
     def _launch_extra_args(self) -> [str]:
@@ -511,13 +531,21 @@ class HitboxOverlay(AppStruct):
 
         hardcoded_patch_place_raw = 0x970126
         xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
-        with open(xrd_exe_path, "r+b") as file:
+
+        with open(xrd_exe_path, "rb") as file:
             file.seek(hardcoded_patch_place_raw)
             if file.read(1) != b'\xe9':
                 return False
         return True
 
     def _custom_unpatch(self):
+        # Windows doesn't allow to write a file if its already open.
+        # So... on Windows raise an error if Xrd is open.
+        if sys.platform == 'win32':
+            for pid in psutil.process_iter():
+                if pid.name() == "GuiltyGearXrd.exe":
+                    raise Exception(f"Cannot unpatch '{self.app_name}' if Xrd is running.\n"
+                    "Please close Xrd before using.")
         unpatch_hitbox_overlay_exe(Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe"))
 
     @property
