@@ -6,7 +6,7 @@ from pathlib import Path
 import psutil
 from github import Github
 
-from modClasses import AppStruct, WakeUpTool, HitboxOverlay, ReplayTakeover
+from modClasses import AppStruct, WakeUpTool, HitboxOverlay, ReplayTakeover, VsRedistributable
 from exceptions import XrdFolderNotValid, XrdFolderNotFound
 
 
@@ -41,6 +41,18 @@ class GlobalConfig:
             # https://github.com/kkots/GGXrdDisplayPing
             # https://github.com/kkots/GGXrdAdjustConnectionTiers  idk about this one
         ]
+
+        match sys.platform:
+            case 'linux':
+                # Dotnet
+                # TODO
+                pass
+            case "win32":
+                mod_list.append(
+                    VsRedistributable(repo_owner="Microsoft", repo_name="Visual_CPP_Redistributable", _config=self,
+                                      description="Required to launch most mods."))
+            case _:
+                pass
 
         for mod in mod_list:
             mod: AppStruct
@@ -156,7 +168,6 @@ class GlobalConfig:
                 # Hardcoded path. It's ugly. Whatever for now.
             case _:
                 raise NotImplementedError(f"OS {sys.platform} is currently not implemented.")
-
 
         for path_str in possible_paths:
             path_file = Path(path_str.format(

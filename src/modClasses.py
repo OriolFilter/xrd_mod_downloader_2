@@ -17,6 +17,9 @@ from subprocess import Popen, DEVNULL
 
 from functions import unpatch_hitbox_overlay_exe
 
+import urllib.request
+from urllib.parse import urlsplit
+
 
 # from Config import GlobalConfig
 
@@ -85,7 +88,7 @@ class AppStruct(ABC):
         :return:
         """
         return any(self._config.xrd_path) and (
-                    (self._bat_file_enabled and self._patch_files_exists) or self._custom_is_patched)
+                (self._bat_file_enabled and self._patch_files_exists) or self._custom_is_patched)
 
     @property
     def _win32_mod_folder_path(self) -> Path:
@@ -404,22 +407,20 @@ FOR /L %%I IN (1,1,30) DO (
                 )
             case "win32":
                 subprocess.Popen(
-                                    shell=False,
-                                    args=[
-#                                         wineloader,
-                                        self.current_release_files_path.joinpath(self._executable_name).absolute(),
-                                        *self._launch_extra_args,
-                                    ],
-                                    stdin=None,
-                                    stdout=DEVNULL,
-                                    stderr=DEVNULL,
-                                    cwd=self.current_release_files_path.absolute(),
-                                    start_new_session=True,
-                                )
+                    shell=False,
+                    args=[
+                        #                                         wineloader,
+                        self.current_release_files_path.joinpath(self._executable_name).absolute(),
+                        *self._launch_extra_args,
+                    ],
+                    stdin=None,
+                    stdout=DEVNULL,
+                    stderr=DEVNULL,
+                    cwd=self.current_release_files_path.absolute(),
+                    start_new_session=True,
+                )
             case _:
                 raise NotImplementedError(f"OS {sys.platform} is currently not implemented.")
-
-
 
     @property
     def _launch_extra_args(self) -> [str]:
@@ -545,7 +546,7 @@ class HitboxOverlay(AppStruct):
             for pid in psutil.process_iter():
                 if pid.name() == "GuiltyGearXrd.exe":
                     raise Exception(f"Cannot unpatch '{self.app_name}' if Xrd is running.\n"
-                    "Please close Xrd before using.")
+                                    "Please close Xrd before using.")
         unpatch_hitbox_overlay_exe(Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe"))
 
     @property
@@ -585,3 +586,67 @@ class HitboxOverlay(AppStruct):
         :return:
         """
         return ["-force"]
+
+
+class StandAloneExe(AppStruct, ABC):
+    # Each app should select their own
+    tag_name = ""
+
+    @property
+    @abstractmethod
+    def _desired_tag_name(self) -> str:
+        """
+        Return the desired target version.
+        It's not relevant but to simplify some stuff...
+        :return:
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def _download_files_url(self) -> [str]:
+        """
+        List of URL to download.
+        :return:
+        """
+        return []
+
+    @property
+    def is_patched(self) -> bool:
+        return self.is_installed
+
+    def download_release(self, _: object):
+        if len(self.tag_name) < 1:
+            raise Exception(
+                "App '{}' no files matched the criteria to be Download.".format(
+                    self.__class__)
+            )
+
+        downloads_files_path = Path(self._config.app_download_path).joinpath(
+            self.app_name.replace("/", "_")).joinpath()
+
+        for url in self.url_source_release:
+            split = urlsplit(url)
+            file_destination_path = downloads_files_path.joinpath(split[-1])
+            urllib.request.urlretrieve(url, file_destination_path)
+
+    @property
+    def _required_files(self) -> [str]:
+        return [self._executable_name]
+
+    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+        raise NotImplementedError
+
+
+class VsRedistributable(StandAloneExe):
+    @property
+    def _download_files_url(self) -> [str]:
+        return [f"https://aka.ms/vs/17/release/{self._executable_name}"]
+
+    # https://aka.ms/vs/17/release/vc_redist.x64.exe
+    # https://aka.ms/vs/17/release/vc_redist.x32.exe
+
+    @property
+    def _executable_name(self) -> str:
+        # TODO 32Bit
+        return "vc_redist.x64.exe"
