@@ -566,16 +566,27 @@ class HitboxOverlay(AppStruct):
         :return: str
         """
 
-        # Get to the steam "root" folder
-        # /home/$HOME/.local/share/Steam/steamapps
-        steam_apps_path = Path(self._config.xrd_path).parent.parent.parent
+        match sys.platform:
+            case 'linux':
+                # Get to the steam "root" folder
+                # /home/$HOME/.local/share/Steam/steamapps
+                steam_apps_path = Path(self._config.xrd_path).parent.parent.parent
 
-        drivec_windows_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/windows")
-        if drivec_windows_path.exists() and drivec_windows_path.is_dir():
-            if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath('syswow64'):
-                return "ggxrd_hitbox_injector64bit.exe"
+                drivec_windows_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/windows")
+                if drivec_windows_path.exists() and drivec_windows_path.is_dir():
+                    if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath('syswow64'):
+                        return "ggxrd_hitbox_injector64bit.exe"
 
-        return "ggxrd_hitbox_injector.exe"
+            case 'win32':
+                # Just check the arch
+                # is redist32 installed?
+                # is redist64 installed?
+                # are we in 64 bit?
+                # else
+                return "ggxrd_hitbox_injector.exe"
+
+            case _:
+                raise NotImplementedError
 
     def _get_assets_whitelist(self, release: GitRelease) -> [str]:
         assets_whitelist = ["ggxrd_hitbox_overlay.zip"]
@@ -655,7 +666,8 @@ class StandAloneExeRequirement(AppStruct, ABC):
 
     @property
     def current_release_files_path(self) -> Path:
-        return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(self.latest_release_name)
+        return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(
+            self.latest_release_name)
 
     def _launch(self):
         """
@@ -698,18 +710,18 @@ class StandAloneExeRequirement(AppStruct, ABC):
         #         )
 
         process = subprocess.Popen(
-                    shell=False,
-                    args=[
-                        #                                         wineloader,
-                        self.current_release_files_path.joinpath(self._executable_name).absolute(),
-                        *self._launch_extra_args,
-                    ],
-                    stdin=None,
-                    stdout=DEVNULL,
-                    stderr=DEVNULL,
-                    cwd=self.current_release_files_path.absolute(),
-                    start_new_session=True,
-                )
+            shell=False,
+            args=[
+                #                                         wineloader,
+                self.current_release_files_path.joinpath(self._executable_name).absolute(),
+                *self._launch_extra_args,
+            ],
+            stdin=None,
+            stdout=DEVNULL,
+            stderr=DEVNULL,
+            cwd=self.current_release_files_path.absolute(),
+            start_new_session=True,
+        )
         process.wait()
 
 
