@@ -139,14 +139,25 @@ class GlobalConfig:
                     return xrd_process.environ().get("PWD")
                 case "win32":
                     return xrd_process.exe().removesuffix("/GuiltyGearXrd.exe")
-
-            raise NotImplementedError(f"OS {sys.platform} is currently not implemented.")
+                case _:
+                    raise NotImplementedError(f"OS {sys.platform} is currently not implemented.")
 
     @staticmethod
     def __find_xrd_process_by_vdf_files() -> str:
         # 2. Find Xrd by checking folders (only one path known right now on linux)
 
-        possible_paths = ["{HOME}/.steam/root/config/libraryfolders.vdf"]
+        possible_paths = []
+        match sys.platform:
+            case 'linux':
+                possible_paths = ["{HOME}/.steam/root/config/libraryfolders.vdf"]
+            case "win32":
+                possible_paths = ["C:/Program Files (x86)/Steam/steamapps/libraryfolders.vdf"]
+                # TODO
+                # Hardcoded path. It's ugly. Whatever for now.
+            case _:
+                raise NotImplementedError(f"OS {sys.platform} is currently not implemented.")
+
+
         for path_str in possible_paths:
             path_file = Path(path_str.format(
                 HOME=os.getenv("HOME"),
