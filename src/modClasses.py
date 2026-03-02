@@ -307,6 +307,16 @@ FOR /L %%I IN (1,1,30) DO (
 
     async def download_release(self, release: GitRelease) -> None:
         """Download the mod/app files"""
+        match sys.platform:
+            case 'win32':
+                if self.is_installed and self.is_patched:
+                    for pid in psutil.process_iter():
+                        if pid.name() == "GuiltyGearXrd.exe":
+                            # Windows doesn't allow to overwrite/delete/edit an already open file.
+                            raise Exception("Can't update *patched* App because Xrd is running.")
+            case _:
+                pass
+
         await self.__download_release(release=release)
         # await asyncio.sleep(3)
 
@@ -502,6 +512,7 @@ class WakeUpTool(AppStruct):
 
         return assets_whitelist
 
+
 class ReplayTakeover(AppStruct):
 
     @property
@@ -521,7 +532,6 @@ class ReplayTakeover(AppStruct):
 
 
 class HitboxOverlay(AppStruct):
-
     @property
     def _custom_is_patched(self) -> bool:
         """
@@ -538,7 +548,9 @@ class HitboxOverlay(AppStruct):
         return True
 
     def _custom_unpatch(self):
-        # Windows doesn't allow to write a file if its already open.
+        # TODO
+        # Prevent unpatch if version is less than 15
+        # Windows doesn't allow to write a file if it's already open.
         # So... on Windows raise an error if Xrd is open.
         if sys.platform == 'win32':
             for pid in psutil.process_iter():
@@ -578,7 +590,7 @@ class HitboxOverlay(AppStruct):
 
             case 'win32':
                 from sys import maxsize
-                if maxsize is 2**32:
+                if maxsize is 2 ** 32:
                     return "ggxrd_hitbox_injector64bit.exe"
                 return "ggxrd_hitbox_injector.exe"
 
@@ -684,36 +696,36 @@ class StandAloneExeRequirement(AppStruct, ABC):
         match sys.platform:
             case 'linux':
                 raise NotImplementedError(f"Launch app {self.__class__}")
-        #         envs = xrd_process.environ()
-        #         wineloader = envs.get("WINELOADER")
-        #         #
-        #         if not wineloader:
-        #             raise WineLoaderNotFound
-        #
-        #         wineprefix = envs.get("WINEPREFIX")
-        #         if not wineprefix:
-        #             raise WinePrefixNotFound
-        #
-        #         envs = {
-        #             "WINEFSYNC": "1",
-        #             "WINEPREFIX": wineprefix,
-        #             "DISPLAY": envs.get("DISPLAY")
-        #         }
-        #
-        #         subprocess.Popen(
-        #             shell=False,
-        #             args=[
-        #                 wineloader,
-        #                 self.current_release_files_path.joinpath(self._executable_name).absolute(),
-        #                 *self._launch_extra_args,
-        #             ],
-        #             env=envs,
-        #             stdin=None,
-        #             stdout=DEVNULL,
-        #             stderr=DEVNULL,
-        #             cwd=self.current_release_files_path.absolute(),
-        #             start_new_session=True,
-        #         )
+            #         envs = xrd_process.environ()
+            #         wineloader = envs.get("WINELOADER")
+            #         #
+            #         if not wineloader:
+            #             raise WineLoaderNotFound
+            #
+            #         wineprefix = envs.get("WINEPREFIX")
+            #         if not wineprefix:
+            #             raise WinePrefixNotFound
+            #
+            #         envs = {
+            #             "WINEFSYNC": "1",
+            #             "WINEPREFIX": wineprefix,
+            #             "DISPLAY": envs.get("DISPLAY")
+            #         }
+            #
+            #         subprocess.Popen(
+            #             shell=False,
+            #             args=[
+            #                 wineloader,
+            #                 self.current_release_files_path.joinpath(self._executable_name).absolute(),
+            #                 *self._launch_extra_args,
+            #             ],
+            #             env=envs,
+            #             stdin=None,
+            #             stdout=DEVNULL,
+            #             stderr=DEVNULL,
+            #             cwd=self.current_release_files_path.absolute(),
+            #             start_new_session=True,
+            #         )
             case 'win32':
                 process = subprocess.Popen(
                     shell=False,
@@ -731,8 +743,9 @@ class StandAloneExeRequirement(AppStruct, ABC):
         process.wait()
 
     @property
-    def is_installed(self)->bool:
+    def is_installed(self) -> bool:
         return self._is_installed
+
 
 class VsRedistributableBase(StandAloneExeRequirement, ABC):
     @property
@@ -747,14 +760,16 @@ class VsRedistributableBase(StandAloneExeRequirement, ABC):
     def latest_release_name(self) -> str:
         return "14"
 
+
 class VsRedistributable64(VsRedistributableBase):
     @property
     def _executable_name(self) -> str:
         return "vc_redist.x64.exe"
 
     @property
-    def _is_installed(self)->bool:
+    def _is_installed(self) -> bool:
         return is_redist_x64_installed()
+
 
 class VsRedistributable86(VsRedistributableBase):
     @property
@@ -762,5 +777,5 @@ class VsRedistributable86(VsRedistributableBase):
         return "vc_redist.x86.exe"
 
     @property
-    def _is_installed(self)->bool:
+    def _is_installed(self) -> bool:
         return is_redist_x86_installed()
