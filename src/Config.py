@@ -162,38 +162,8 @@ class GlobalConfig:
                     raise NotImplementedError(f"OS {sys.platform} is currently not implemented.")
 
     @staticmethod
-    def __find_xrd_process_by_installed_apps() -> str:
-        # 2. Check which installed apps does the system contain
-        match sys.platform:
-            case 'linux':
-                pass
-            case "win32":
-                pass
-                # TODO
-#                 import winreg
-#                 hkey = winreg.HKEY_CURRENT_USER
-#                 try:
-#                     with winreg.OpenKeyEx(key=hkey,
-#                     sub_key=r"SOFTWARE\Valve\Steam\Apps\520440") as reg:
-#                         n_index = winreg.QueryInfoKey(reg)[1]
-#                         for i in range(0,n_index):
-#                             query = winreg.EnumValue(reg,i)
-#                             if query[0]=="SteamPath" and query[1] == 1:
-#                                 return query[0]
-#                 except FileNotFoundError as e:
-#                     # Key not found, thus shouldn't be installed.
-#                     return ""
-                # TODO
-                # Winreg from the Xrd app
-                # Winreg from the steam app page
-                # Hardcoded path. It's ugly. Whatever for now.
-            case _:
-                raise NotImplementedError(f"OS {sys.platform} is currently not implemented.")
-        return ""
-
-    @staticmethod
     def __find_xrd_process_by_vdf_files() -> str:
-        # 3. Find Xrd by checking folders (only one path known right now on linux)
+        # 2. Find Xrd by checking folders (only one path known right now on linux)
         possible_paths = []
         match sys.platform:
             case 'linux':

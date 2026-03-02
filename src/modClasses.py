@@ -745,7 +745,7 @@ class VsRedistributableBase(StandAloneExeRequirement, ABC):
 
     @property
     def latest_release_name(self) -> str:
-        return "17"
+        return "14"
 
 class VsRedistributable64(VsRedistributableBase):
     @property
