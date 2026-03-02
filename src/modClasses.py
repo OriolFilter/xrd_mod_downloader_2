@@ -589,8 +589,6 @@ class HitboxOverlay(AppStruct):
 
 
 class StandAloneExe(AppStruct, ABC):
-    # Each app should select their own
-    tag_name = ""
 
     @property
     @abstractmethod
@@ -639,9 +637,9 @@ class StandAloneExe(AppStruct, ABC):
 
 
 class VsRedistributable(StandAloneExe):
-    # @property
-    # def _desired_tag_name(self) -> str:
-    #     return "17"
+    @property
+    def latest_release_name(self) -> str:
+         return "17"
 
     @property
     def _download_files_url(self) -> [str]:
