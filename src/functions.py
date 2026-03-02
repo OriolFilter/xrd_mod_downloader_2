@@ -264,37 +264,45 @@ def unpatch_hitbox_overlay_exe(guilty_gear_xrd_exe_path):
         if debug:
             print("Unpatched successfully.")
 
+
 def is_redist_x64_installed() -> bool:
+    # TODO figure it out
+    # Wow64 only exist on 64-bit windows.
+    # On Win32 Won't work
     import winreg
     # Computer\HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\X64
     hkey = winreg.HKEY_LOCAL_MACHINE
     try:
         with winreg.OpenKeyEx(key=hkey,
-        sub_key=r"SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\X64") as reg:
+                              sub_key=r"SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\X64") as reg:
             n_index = winreg.QueryInfoKey(reg)[1]
-            for i in range(0,n_index):
-                query = winreg.EnumValue(reg,i)
-                if query[0]=="Installed" and query[1] == 1:
+            for i in range(0, n_index):
+                query = winreg.EnumValue(reg, i)
+                if query[0] == "Installed" and query[1] == 1:
                     print(reg)
-#                     print("Installed")
+                    #                     print("Installed")
                     return True
     except FileNotFoundError as e:
         # Key not found, thus shouldn't be installed.
         return False
 
+
 def is_redist_x86_installed() -> bool:
+    # TODO figure it out
+    # Wow64 only exist on 64-bit windows.
+    # On Win32 Won't work
     import winreg
     # Computer\HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86
     hkey = winreg.HKEY_LOCAL_MACHINE
     try:
         with winreg.OpenKeyEx(key=hkey,
-        sub_key=r"SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\X86") as reg:
+                              sub_key=r"SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\X86") as reg:
             n_index = winreg.QueryInfoKey(reg)[1]
-            for i in range(0,n_index):
-                query = winreg.EnumValue(reg,i)
-                if query[0]=="Installed" and query[1] == 1:
+            for i in range(0, n_index):
+                query = winreg.EnumValue(reg, i)
+                if query[0] == "Installed" and query[1] == 1:
                     print(reg)
-#                     print("Installed")
+                    #                     print("Installed")
                     return True
     except FileNotFoundError as e:
         # Key not found, thus shouldn't be installed.
