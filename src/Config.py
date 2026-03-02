@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from pathlib import Path
 
 import psutil
@@ -23,12 +24,12 @@ class GlobalConfig:
         # C++ redistrib
         # DotNet
         mod_list = [
-            HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
-                          repo_owner="kkots",
-                          description="Hitbox/framedata viewer mod",
-                          _config=self),
-            WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
-            ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
+            # HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
+            #               repo_owner="kkots",
+            #               description="Hitbox/framedata viewer mod",
+            #               _config=self),
+            # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
+            # ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self),
             # #Iquis would need to verify download differenlty
 
@@ -133,9 +134,16 @@ class GlobalConfig:
                 xrd_process = pid
                 break
         if xrd_process:
-            return xrd_process.environ().get("PWD")
+            match sys.platform:
+                case 'linux':
+                    return xrd_process.environ().get("PWD")
+                case "win32":
+                    return xrd_process.exe().removesuffix("/GuiltyGearXrd.exe")
 
-    def __find_xrd_process_by_vdf_files(self) -> str:
+            raise NotImplementedError(f"OS {sys.platform} is currently not implemented.")
+
+    @staticmethod
+    def __find_xrd_process_by_vdf_files() -> str:
         # 2. Find Xrd by checking folders (only one path known right now on linux)
 
         possible_paths = ["{HOME}/.steam/root/config/libraryfolders.vdf"]
