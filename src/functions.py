@@ -2,6 +2,8 @@ import os
 import struct
 from pathlib import Path
 
+import psutil
+
 
 def unpatch_hitbox_overlay_exe(guilty_gear_xrd_exe_path):
     """
@@ -279,8 +281,7 @@ def is_redist_x64_installed() -> bool:
             for i in range(0, n_index):
                 query = winreg.EnumValue(reg, i)
                 if query[0] == "Installed" and query[1] == 1:
-                    print(reg)
-                    #                     print("Installed")
+                    # print("Installed")
                     return True
     except FileNotFoundError as e:
         # Key not found, thus shouldn't be installed.
@@ -301,9 +302,16 @@ def is_redist_x86_installed() -> bool:
             for i in range(0, n_index):
                 query = winreg.EnumValue(reg, i)
                 if query[0] == "Installed" and query[1] == 1:
-                    print(reg)
-                    #                     print("Installed")
+                    # print("Installed")
                     return True
     except FileNotFoundError as e:
         # Key not found, thus shouldn't be installed.
         return False
+
+
+def get_xrd_loaded_dll() -> [str]:
+    for pid in psutil.process_iter():
+        if pid.name() == "GuiltyGearXrd.exe":
+            for memp_map in pid.memory_maps():
+                yield memp_map.path
+            return

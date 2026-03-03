@@ -98,12 +98,12 @@ class ModManagerApp(App):
             try:
                 app.launch()
                 self.notify(f"Launched {app.app_name}.", severity="information")
-            except XrdNotRunning:
-                self.notify(f"Can't launch app {app.app_name}.\nXrdApp is not running.",
-                            severity="error")
-            # except Exception as e:
-            #     self.notify(f"Can't launch app {app.app_name}.\nError: {e}.",
+            # except XrdNotRunning:
+            #     self.notify(f"Can't launch app {app.app_name}.\nXrdApp is not running.",
             #                 severity="error")
+            except Exception as e:
+                self.notify(f"Can't launch app {app.app_name}.\nError: {e}.",
+                            severity="error")
 
     def compose(self) -> ComposeResult:
         # Footer to show keys
