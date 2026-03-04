@@ -33,3 +33,5 @@ Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Classes\steam\Shell\Open\Command
 
 Computer\HKEY_CURRENT_USER\SOFTWARE\Valve\Steam
 c:/program files (x86)/steam
+
+https://github.com/pywinauto/pywinauto

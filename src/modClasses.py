@@ -17,7 +17,6 @@ from subprocess import Popen, DEVNULL
 
 import functions
 
-
 import urllib.request
 from urllib.parse import urlsplit
 
@@ -369,7 +368,7 @@ FOR /L %%I IN (1,1,30) DO (
         raise NotImplementedError("_download_app for app {}".format(self.__class__))
 
     def launch(self) -> None:
-        if self._is_injected():
+        if self._is_injected:
             raise Exception("Cannot launch, the mod is already running/injected")
         self._launch()
 
@@ -466,6 +465,7 @@ FOR /L %%I IN (1,1,30) DO (
     def can_be_launched(self) -> bool:
         return any(self._executable_name)
 
+    @property
     def _is_injected(self) -> bool:
         loaded_files = functions.get_xrd_loaded_dll()
         if any(self._key_dll):
@@ -549,6 +549,15 @@ class WakeUpTool(AppStruct):
                             "GGXrdReversalTool-{}.zip".format(release.tag_name)]
 
         return assets_whitelist
+
+    @property
+    def _is_injected(self) -> bool:
+        for pid in psutil.process_iter():
+            for command in pid.cmdline():
+                if command.endswith(self._executable_name):
+                    return True
+                    # TODO bring app to foreground.
+        return False
 
 
 class ReplayTakeover(AppStruct):
