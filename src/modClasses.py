@@ -449,8 +449,6 @@ FOR /L %%I IN (1,1,30) DO (
     @property
     def _is_installed(self) -> bool:
         """
-        Wakeup tool only needs a few files.
-
         :return: True if all files exists.
         False if any is missing.
         """
@@ -747,7 +745,7 @@ class StandAloneExeRequirement(AppStruct, ABC):
 
     def launch(self) -> None:
         if self._is_installed:
-            raise Exception("Once App {} is installed, it cannot be uninstalled nor patched")
+            raise Exception(f"Once App {self.__class__} is installed, it cannot be uninstalled nor patched")
         self._launch()
 
     def _launch(self):
