@@ -471,8 +471,13 @@ FOR /L %%I IN (1,1,30) DO (
         if any(self._key_dll):
             for file in loaded_files:
                 file: str
-                if file.endswith(f"/{self._key_dll}") and not file.endswith("/"):
-                    return True
+                match sys.platform:
+                    case 'linux':
+                        if file.endswith(f"/{self._key_dll}") and not file.endswith("/"):
+                            return True
+                    case 'win32':
+                        if file.endswith(f"\\{self._key_dll}") and not file.endswith("\\"):
+                            return True
         return False
 
     @property
