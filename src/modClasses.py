@@ -449,8 +449,6 @@ FOR /L %%I IN (1,1,30) DO (
     @property
     def _is_installed(self) -> bool:
         """
-        Wakeup tool only needs a few files.
-
         :return: True if all files exists.
         False if any is missing.
         """
