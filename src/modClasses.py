@@ -666,6 +666,11 @@ class HitboxOverlay(AppStruct):
 
 
 class StandAloneExeRequirement(AppStruct, ABC):
+    @property
+    def up_to_date(self) -> bool:
+        if self.is_installed:
+            return True
+        return False
 
     @property
     def _key_dll(self) -> str:
