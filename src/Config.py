@@ -6,7 +6,8 @@ from pathlib import Path
 import psutil
 from github import Github
 
-from modClasses import AppStruct, WakeUpTool, HitboxOverlay, ReplayTakeover, VsRedistributable64, VsRedistributable86
+from modClasses import AppStruct, WakeUpTool, HitboxOverlay, ReplayTakeover, VsRedistributable64, VsRedistributable86, \
+    DotNet
 from exceptions import XrdFolderNotValid, XrdFolderNotFound
 
 
@@ -47,17 +48,19 @@ class GlobalConfig:
                 # Dotnet
                 # TODO
                 # TEST
-#                 mod_list.append(
-#                     VsRedistributable64(repo_owner="Microsoft", repo_name="Visual_CPP_Redistributable", _config=self,
-#                                       description="Required to launch most mods."))
+                mod_list.append(DotNet(repo_owner="Microsofrt", repo_name=".Net", _config=self,
+                                       description="Required to launch the Reversal Tool"))
+                #                 mod_list.append(
+                #                     VsRedistributable64(repo_owner="Microsoft", repo_name="Visual_CPP_Redistributable", _config=self,
+                #                                       description="Required to launch most mods."))
                 pass
             case "win32":
                 mod_list.append(
                     VsRedistributable64(repo_owner="Microsoft", repo_name="VsCppRedist_x64", _config=self,
-                                      description="Required to launch most mods."))
+                                        description="Required to launch most mods."))
                 mod_list.append(
                     VsRedistributable86(repo_owner="Microsoft", repo_name="VsCppRedist_x86", _config=self,
-                                      description="Required to launch most mods."))
+                                        description="Required to launch most mods."))
             case _:
                 pass
 
@@ -174,11 +177,11 @@ class GlobalConfig:
                 hkey = winreg.HKEY_CURRENT_USER
                 try:
                     with winreg.OpenKeyEx(key=hkey,
-                    sub_key=r"SOFTWARE\Valve\Steam") as reg:
+                                          sub_key=r"SOFTWARE\Valve\Steam") as reg:
                         n_index = winreg.QueryInfoKey(reg)[1]
-                        for i in range(0,n_index):
-                            query = winreg.EnumValue(reg,i)
-                            if query[0]=="SteamPath":
+                        for i in range(0, n_index):
+                            query = winreg.EnumValue(reg, i)
+                            if query[0] == "SteamPath":
                                 possible_paths = [f"{query[1]}/steamapps/libraryfolders.vdf"]
 
                 except FileNotFoundError as e:
@@ -213,6 +216,9 @@ class GlobalConfig:
 
     @property
     def xrd_path(self) -> str:
+        # TODO
+        # Should validate be called every time to check if xrd path is still valid?
+        # ie: Changed proton version
         if self.__xrd_path:
             pass
         elif path := self.__find_xrd_location_if_open():

@@ -757,37 +757,47 @@ class StandAloneExeRequirement(AppStruct, ABC):
         # TODO Linux
         match sys.platform:
             case 'linux':
-                raise NotImplementedError(f"Launch app {self.__class__}")
-            #         envs = xrd_process.environ()
-            #         wineloader = envs.get("WINELOADER")
-            #         #
-            #         if not wineloader:
-            #             raise WineLoaderNotFound
-            #
-            #         wineprefix = envs.get("WINEPREFIX")
-            #         if not wineprefix:
-            #             raise WinePrefixNotFound
-            #
-            #         envs = {
-            #             "WINEFSYNC": "1",
-            #             "WINEPREFIX": wineprefix,
-            #             "DISPLAY": envs.get("DISPLAY")
-            #         }
-            #
-            #         subprocess.Popen(
-            #             shell=False,
-            #             args=[
-            #                 wineloader,
-            #                 self.current_release_files_path.joinpath(self._executable_name).absolute(),
-            #                 *self._launch_extra_args,
-            #             ],
-            #             env=envs,
-            #             stdin=None,
-            #             stdout=DEVNULL,
-            #             stderr=DEVNULL,
-            #             cwd=self.current_release_files_path.absolute(),
-            #             start_new_session=True,
-            #         )
+                # Linux needs Xrd running to find/confirm the wineprefix/loader locations
+                xrd_process = None
+                for pid in psutil.process_iter():
+                    if pid.name() == "GuiltyGearXrd.exe":
+                        xrd_process = pid
+                        break
+                del pid
+
+                if not xrd_process:
+                    raise XrdNotRunning
+
+                envs = xrd_process.environ()
+                wineloader = envs.get("WINELOADER")
+
+                if not wineloader:
+                    raise WineLoaderNotFound
+
+                wineprefix = envs.get("WINEPREFIX")
+                if not wineprefix:
+                    raise WinePrefixNotFound
+
+                envs = {
+                    "WINEFSYNC": "1",
+                    "WINEPREFIX": wineprefix,
+                    "DISPLAY": envs.get("DISPLAY")
+                }
+
+                process = subprocess.Popen(
+                    shell=False,
+                    args=[
+                        wineloader,
+                        self.current_release_files_path.joinpath(self._executable_name).absolute(),
+                        *self._launch_extra_args,
+                    ],
+                    env=envs,
+                    stdin=None,
+                    stdout=DEVNULL,
+                    stderr=DEVNULL,
+                    cwd=self.current_release_files_path.absolute(),
+                    start_new_session=True,
+                )
             case 'win32':
                 process = subprocess.Popen(
                     shell=False,
@@ -841,3 +851,43 @@ class VsRedistributable86(VsRedistributableBase):
     @property
     def _is_installed(self) -> bool:
         return functions.is_redist_x86_installed()
+
+
+class DotNet(StandAloneExeRequirement):
+    # Seems to work a bit weird/funky on linux
+    # TODO check linux/windows
+    @property
+    def _launch_extra_args(self) -> [str]:
+        return ["/install", "/quiet", "/norestart"]
+
+    @property
+    def _executable_name(self) -> str:
+        steam_apps_path = Path(self._config.xrd_path).parent.parent.parent
+        drivec_windows_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/windows")
+        if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath('syswow64'):
+            arch = "x64"
+        else:
+            arch = "x86"
+        return f"dotnet-sdk-win-{arch}.exe"
+
+    @property
+    def _download_file_url(self) -> str:
+        return f"https://aka.ms/dotnet/6.0/{self._executable_name}"
+
+    @property
+    def latest_release_name(self) -> str:
+        return "14"
+
+    @property
+    def _is_installed(self) -> bool:
+        match sys.platform:
+            case 'linux':
+                # TODO
+                # Also, from older messages, how to check if .NET version is installed:
+                # ls $WINEPREFIX/drive_c/'Program Files'/dotnet/shared/Microsoft.WindowsDesktop.App
+                # Prints:
+                # 6.0.33 (so basically a list of folder, and folders are named after versions, you need at least one with > 6.0.0)
+                return False
+            case "win32":
+                pass
+        return False
