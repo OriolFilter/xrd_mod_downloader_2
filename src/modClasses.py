@@ -742,7 +742,7 @@ class StandAloneExeRequirement(AppStruct, ABC):
 
     def launch(self) -> None:
         if self._is_installed:
-            raise Exception("Once App {} is installed, it cannot be uninstalled nor patched")
+            raise Exception(f"Once App {self.__class__} is installed, it cannot be uninstalled nor patched")
         self._launch()
 
     def _launch(self):
