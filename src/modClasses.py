@@ -550,11 +550,21 @@ class WakeUpTool(AppStruct):
 
     @property
     def _is_injected(self) -> bool:
-        for pid in psutil.process_iter():
-            for command in pid.cmdline():
-                if command.endswith(self._executable_name):
-                    return True
-                    # TODO bring app to foreground.
+        match sys.platform:
+            case 'linux':
+                for pid in psutil.process_iter():
+                    try:
+                        for command in pid.cmdline():
+                            if command.endswith("GGXrdReversalTool.exe"):
+#                               TODO bring app to foreground.
+                                return True
+                    except psutil.AccessDenied as e:
+                        pass
+            case 'win32':
+                for pid in psutil.process_iter():
+                    if "GGXrdReversalTool" in pid.name():
+#                       TODO bring app to foreground.
+                        return True
         return False
 
 
