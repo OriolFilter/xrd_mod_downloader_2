@@ -920,6 +920,7 @@ class DotNet(StandAloneExeRequirement):
 
     @property
     def latest_release_name(self) -> str:
+        # TODO dotnet could fetch the current version from registry since the flag is there (Windows).
         return "6.0"
 
     @property
