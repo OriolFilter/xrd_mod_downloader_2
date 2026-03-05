@@ -21,16 +21,15 @@ class GlobalConfig:
     __xrd_path: str = ""
 
     def __init__(self):
-        # TODO
-        # C++ redistrib
-        # DotNet
         mod_list = [
-#             HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
-#                            repo_owner="kkots",
-#                            description="Hitbox/framedata viewer mod",
-#                            _config=self),
+            HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
+                           repo_owner="kkots",
+                           description="Hitbox/framedata viewer mod",
+                           _config=self),
             WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
-#             ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
+            DotNet(repo_owner="Microsoft", repo_name=".Net", _config=self,
+                        description="Required to launch the Reversal Tool"),
+            ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self),
             # #Iquis would need to verify download differenlty
 
@@ -45,18 +44,8 @@ class GlobalConfig:
 
         match sys.platform:
             case 'linux':
-                # Dotnet
-                # TODO
-                # TEST
-                mod_list.append(DotNet(repo_owner="Microsofrt", repo_name=".Net", _config=self,
-                                       description="Required to launch the Reversal Tool"))
-                #                 mod_list.append(
-                #                     VsRedistributable64(repo_owner="Microsoft", repo_name="Visual_CPP_Redistributable", _config=self,
-                #                                       description="Required to launch most mods."))
                 pass
             case "win32":
-                mod_list.append(DotNet(repo_owner="Microsofrt", repo_name=".Net", _config=self,
-                                                   description="Required to launch the Reversal Tool"))
                 mod_list.append(
                     VsRedistributable64(repo_owner="Microsoft", repo_name="VsCppRedist_x64", _config=self,
                                         description="Required to launch most mods."))
@@ -130,7 +119,7 @@ class GlobalConfig:
         config_dict: {str: str | {str: str}} = {}
         mods_dict: {str: {str: str}} = {}
 
-        # fields_to_export: [str] = ["tag_name","url_source_release"]
+        # fields_to_export: [str] = ["_tag_name","url_source_release"]
 
         # Export mods info
         for key, app in self.mod_dict.items():

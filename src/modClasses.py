@@ -30,13 +30,21 @@ class AppStruct(ABC):
     repo_owner: str
     repo_name: str
     release_id: str | None = ""
-    tag_name: str | None = ""
+    _tag_name: str | None = ""
     # app_type: str # Shouldn't be necessary/helpful.
     url_source_release: str | None = ""
     description: str = ""
     __latest_release_available: GitRelease = None
 
     # _requires_xrd_running_to_launch = True
+
+    @property
+    def tag_name(self) -> str:
+        return self._tag_name
+
+    @tag_name.setter
+    def tag_name(self, tag_name: str):
+        self._tag_name = tag_name
 
     @property
     def app_name(self) -> str:
@@ -674,6 +682,17 @@ class HitboxOverlay(AppStruct):
 
 
 class StandAloneExeRequirement(AppStruct, ABC):
+
+    @property
+    def tag_name(self) -> str:
+        if self.is_installed:
+            return self.latest_release_name
+        return ""
+
+    @tag_name.setter
+    def tag_name(self, _: str):
+        pass
+
     @property
     def up_to_date(self) -> bool:
         if self.is_installed:
@@ -683,16 +702,6 @@ class StandAloneExeRequirement(AppStruct, ABC):
     @property
     def _key_dll(self) -> str:
         raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def latest_release_name(self) -> str:
-        """
-        Return the desired target version.
-        It's not relevant but to simplify some stuff...
-        :return:
-        """
-        pass
 
     @property
     @abstractmethod
@@ -730,6 +739,16 @@ class StandAloneExeRequirement(AppStruct, ABC):
     @property
     def latest_release(self) -> None:
         return
+
+    @property
+    @abstractmethod
+    def latest_release_name(self) -> str:
+        """
+        Return the desired target version.
+        It's not relevant but to simplify some stuff...
+        :return:
+        """
+        raise NotImplementedError
 
     async def install_release(self, release: GitRelease) -> bool:
         """
@@ -865,7 +884,7 @@ class VsRedistributable86(VsRedistributableBase):
 
 class DotNet(StandAloneExeRequirement):
     # Seems to work a bit weird/funky on linux
-    # TODO check linux/windows
+    # TODO check linux
     @property
     def _launch_extra_args(self) -> [str]:
         return ["/install", "/quiet", "/norestart"]
@@ -901,7 +920,7 @@ class DotNet(StandAloneExeRequirement):
 
     @property
     def latest_release_name(self) -> str:
-        return "14"
+        return "6.0"
 
     @property
     def _is_installed(self) -> bool:
