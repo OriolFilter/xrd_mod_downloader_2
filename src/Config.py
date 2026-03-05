@@ -29,7 +29,7 @@ class GlobalConfig:
             #                repo_owner="kkots",
             #                description="Hitbox/framedata viewer mod",
             #                _config=self),
-            WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
+#             WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
             # ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self),
             # #Iquis would need to verify download differenlty
@@ -55,6 +55,8 @@ class GlobalConfig:
                 #                                       description="Required to launch most mods."))
                 pass
             case "win32":
+                mod_list.append(DotNet(repo_owner="Microsofrt", repo_name=".Net", _config=self,
+                                                   description="Required to launch the Reversal Tool"))
                 mod_list.append(
                     VsRedistributable64(repo_owner="Microsoft", repo_name="VsCppRedist_x64", _config=self,
                                         description="Required to launch most mods."))
@@ -160,7 +162,7 @@ class GlobalConfig:
                 case 'linux':
                     return xrd_process.environ().get("PWD")
                 case "win32":
-                    return xrd_process.exe().removesuffix("/GuiltyGearXrd.exe")
+                    return xrd_process.exe().removesuffix("\\Binaries\\Win32\\GuiltyGearXrd.exe")
                 case _:
                     raise NotImplementedError(f"OS {sys.platform} is currently not implemented.")
 
@@ -222,7 +224,6 @@ class GlobalConfig:
         if self.__xrd_path:
             pass
         elif path := self.__find_xrd_location_if_open():
-            raise Exception(path)
             self.xrd_path = path
         elif path := self.__find_xrd_process_by_vdf_files():
             self.__xrd_path = path

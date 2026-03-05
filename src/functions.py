@@ -286,6 +286,7 @@ def is_redist_x64_installed() -> bool:
     except FileNotFoundError as e:
         # Key not found, thus shouldn't be installed.
         return False
+    return False
 
 
 def is_redist_x86_installed() -> bool:
@@ -302,6 +303,47 @@ def is_redist_x86_installed() -> bool:
             for i in range(0, n_index):
                 query = winreg.EnumValue(reg, i)
                 if query[0] == "Installed" and query[1] == 1:
+                    # print("Installed")
+                    return True
+    except FileNotFoundError as e:
+        # Key not found, thus shouldn't be installed.
+        return False
+
+
+def is_dotnet_x86_installed() -> bool:
+    # TODO figure it out
+    # Wow64 only exist on 64-bit windows.
+    # On Win32 Won't work
+    import winreg
+    # Computer\HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86
+    hkey = winreg.HKEY_LOCAL_MACHINE
+    try:
+        with winreg.OpenKeyEx(key=hkey,
+                              sub_key=r"SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x86\hostfxr") as reg:
+            n_index = winreg.QueryInfoKey(reg)[1]
+            for i in range(0, n_index):
+                query = winreg.EnumValue(reg, i)
+                if query[0] == "Version" and any(query[1]):
+                    # print("Installed")
+                    return True
+    except FileNotFoundError as e:
+        # Key not found, thus shouldn't be installed.
+        return False
+
+def is_dotnet_x64_installed() -> bool:
+    # TODO figure it out
+    # Wow64 only exist on 64-bit windows.
+    # On Win32 Won't work
+    import winreg
+    # Computer\HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86
+    hkey = winreg.HKEY_LOCAL_MACHINE
+    try:
+        with winreg.OpenKeyEx(key=hkey,
+                              sub_key=r"SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x64\hostfxr") as reg:
+            n_index = winreg.QueryInfoKey(reg)[1]
+            for i in range(0, n_index):
+                query = winreg.EnumValue(reg, i)
+                if query[0] == "Version" and any(query[1]):
                     # print("Installed")
                     return True
     except FileNotFoundError as e:

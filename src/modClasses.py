@@ -643,7 +643,7 @@ class HitboxOverlay(AppStruct):
 
             case 'win32':
                 from sys import maxsize
-                if maxsize is 2 ** 32:
+                if maxsize > 2 ** 32:
                     return "ggxrd_hitbox_injector64bit.exe"
                 return "ggxrd_hitbox_injector.exe"
 
@@ -862,13 +862,28 @@ class DotNet(StandAloneExeRequirement):
 
     @property
     def _executable_name(self) -> str:
-        steam_apps_path = Path(self._config.xrd_path).parent.parent.parent
-        drivec_windows_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/windows")
-        if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath('syswow64'):
-            arch = "x64"
-        else:
-            arch = "x86"
-        return f"dotnet-sdk-win-{arch}.exe"
+        match sys.platform:
+            case 'linux':
+                # TODO
+                # Also, from older messages, how to check if .NET version is installed:
+                # ls $WINEPREFIX/drive_c/'Program Files'/dotnet/shared/Microsoft.WindowsDesktop.App
+                # Prints:
+                # 6.0.33 (so basically a list of folder, and folders are named after versions, you need at least one with > 6.0.0)
+                steam_apps_path = Path(self._config.xrd_path).parent.parent.parent
+                drivec_windows_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/windows")
+                if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath('syswow64'):
+                    arch = "x64"
+                else:
+                    arch = "x86"
+                return f"dotnet-sdk-win-{arch}.exe"
+            case "win32":
+                from sys import maxsize
+                if maxsize > 2 ** 32:
+                    arch = "x64"
+                else:
+                    arch = "x86"
+                return f"dotnet-sdk-win-{arch}.exe"
+
 
     @property
     def _download_file_url(self) -> str:
@@ -889,5 +904,9 @@ class DotNet(StandAloneExeRequirement):
                 # 6.0.33 (so basically a list of folder, and folders are named after versions, you need at least one with > 6.0.0)
                 return False
             case "win32":
-                pass
+                from sys import maxsize
+                if maxsize > 2 ** 32:
+                    return functions.is_dotnet_x64_installed()
+                else:
+                    return functions.is_dotnet_x86_installed()
         return False
