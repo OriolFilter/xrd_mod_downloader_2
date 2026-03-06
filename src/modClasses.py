@@ -373,7 +373,10 @@ FOR /L %%I IN (1,1,30) DO (
 
     def _launch(self):
         """
-        # TODO
+        Uses popen to launch/execute the respective mod/injector/.exe.
+
+        On Linux populates the WinePrefix Display and WineFSync envs.
+        Uses the respective wine file as an executable and passes the .exe as an argument.
         """
 
         xrd_process = None
@@ -738,7 +741,8 @@ class StandAloneExeRequirement(AppStruct, ABC):
     @property
     def latest_release(self) -> None:
         """
-        Set to return none for compatibility reasons
+        Set to return none for compatibility reasons.
+        Don't use.
         :return:
         """
         return None
@@ -748,7 +752,7 @@ class StandAloneExeRequirement(AppStruct, ABC):
     def latest_release_name(self) -> str:
         """
         Return the desired target version.
-        It's not relevant but to simplify some stuff...
+        Required to determine the installation path.
         :return:
         """
         raise NotImplementedError
@@ -766,9 +770,16 @@ class StandAloneExeRequirement(AppStruct, ABC):
         self.tag_name = self.latest_release_name
         return True
 
-    # TODO Isn't this duplicated??
     @property
     def current_release_files_path(self) -> Path:
+        """
+        Since the installation step includes setting the self.name_tag, it's using the latest_release_name to determine
+        the download destination.
+
+        self.latest_release_name is hardcoded.
+        :return:
+        """
+        # TODO fix/remove installation step
         return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(
             self.latest_release_name)
 
@@ -820,16 +831,6 @@ class VsRedistributable86(VsRedistributableBase):
 
 
 class DotNet(StandAloneExeRequirement):
-    # Seems to work a bit weird/funky on linux
-    # TODO check linux
-
-    # @property
-    # TODO, on windows can get the version from the registry.
-    # def tag_name(self) -> str:
-    #     if self.is_installed:
-    #         return self.latest_release_name
-    #     return ""
-
     @property
     def tag_name(self) -> str:
         if self.is_installed:
@@ -856,11 +857,6 @@ class DotNet(StandAloneExeRequirement):
     def _executable_name(self) -> str:
         match sys.platform:
             case 'linux':
-                # TODO
-                # Also, from older messages, how to check if .NET version is installed:
-                # ls $WINEPREFIX/drive_c/'Program Files'/dotnet/shared/Microsoft.WindowsDesktop.App
-                # Prints:
-                # 6.0.33 (so basically a list of folder, and folders are named after versions, you need at least one with > 6.0.0)
                 steam_apps_path = Path(self._config.xrd_path).parent.parent
                 drivec_windows_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/windows")
                 if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath(
@@ -922,7 +918,6 @@ class DotNet(StandAloneExeRequirement):
 
                 for sdkpath in dotnet_sdk_dirs:
                     dotnet_dll = sdkpath.joinpath("dotnet.dll")
-                    print(dotnet_dll.is_dir())
                     if dotnet_dll.exists() and dotnet_dll.is_file() and not dotnet_dll.is_dir():
                         return sdkpath.name
 
