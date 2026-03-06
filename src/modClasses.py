@@ -794,8 +794,26 @@ class StandAloneExeRequirement(AppStruct, ABC):
     def is_installed(self) -> bool:
         return self._is_installed
 
+    @property
+    def _is_installed(self) -> bool:
+        return any(self._vs_redist_version)
 
 class VsRedistributableBase(StandAloneExeRequirement, ABC):
+
+    @property
+    def tag_name(self) -> str:
+        if self.is_installed:
+            return self._vs_redist_version
+        return ""
+
+    @tag_name.setter
+    def tag_name(self, tag_name: str):
+        pass
+
+    @property
+    def _is_installed(self) -> bool:
+        return any(self._vs_redist_version)
+
     @property
     def _launch_extra_args(self) -> [str]:
         return ["/install", "/quiet", "/norestart"]
@@ -808,6 +826,10 @@ class VsRedistributableBase(StandAloneExeRequirement, ABC):
     def latest_release_name(self) -> str:
         return "14"
 
+    @property
+    def _vs_redist_version(self)-> str:
+        raise NotImplementedError
+
 
 class VsRedistributable64(VsRedistributableBase):
     @property
@@ -815,9 +837,8 @@ class VsRedistributable64(VsRedistributableBase):
         return "vc_redist.x64.exe"
 
     @property
-    def _is_installed(self) -> bool:
-        return functions.is_redist_x64_installed()
-
+    def _vs_redist_version(self) -> str:
+        return functions.redist_x64_version()
 
 class VsRedistributable86(VsRedistributableBase):
     @property
@@ -825,9 +846,8 @@ class VsRedistributable86(VsRedistributableBase):
         return "vc_redist.x86.exe"
 
     @property
-    def _is_installed(self) -> bool:
-        return functions.is_redist_x86_installed()
-
+    def _vs_redist_version(self) -> str:
+        return functions.redist_x86_version()
 
 class DotNet(StandAloneExeRequirement):
     @property
@@ -838,7 +858,7 @@ class DotNet(StandAloneExeRequirement):
 
     @tag_name.setter
     def tag_name(self, tag_name: str):
-        self._tag_name = tag_name
+        pass
 
     @property
     def latest_release_name(self) -> str:
