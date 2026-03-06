@@ -472,8 +472,8 @@ FOR /L %%I IN (1,1,30) DO (
 
     @property
     def _is_injected(self) -> bool:
-        loaded_files = functions.get_xrd_loaded_dll()
         if any(self._key_dll):
+            loaded_files = functions.get_xrd_loaded_dll()
             for file in loaded_files:
                 file: str
                 match sys.platform:
