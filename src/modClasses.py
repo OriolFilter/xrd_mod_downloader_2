@@ -299,8 +299,8 @@ FOR /L %%I IN (1,1,30) DO (
     @property
     def up_to_date(self) -> bool:
         if self.tag_name \
-                and self.__latest_release_available \
-                and self.tag_name == self.__latest_release_available.tag_name:
+                and self.latest_release \
+                and self.tag_name == self.latest_release_name:
             return True
         return False
 
