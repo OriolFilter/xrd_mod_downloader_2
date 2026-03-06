@@ -310,7 +310,8 @@ def is_redist_x86_installed() -> bool:
         return False
 
 
-def is_dotnet_x86_installed() -> bool:
+# Move to a separate file for windows functions
+def get_dotnet_x86_version_windows() -> str:
     # TODO figure it out
     # Wow64 only exist on 64-bit windows.
     # On Win32 Won't work
@@ -325,17 +326,18 @@ def is_dotnet_x86_installed() -> bool:
                 query = winreg.EnumValue(reg, i)
                 if query[0] == "Version" and any(query[1]):
                     # print("Installed")
-                    return True
+                    return query[1]
     except FileNotFoundError as e:
         # Key not found, thus shouldn't be installed.
-        return False
+        return ""
 
-def is_dotnet_x64_installed() -> bool:
+
+def get_dotnet_x64_version_windows() -> str:
     # TODO figure it out
     # Wow64 only exist on 64-bit windows.
     # On Win32 Won't work
     import winreg
-    # Computer\HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86
+    # Computer\HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x64
     hkey = winreg.HKEY_LOCAL_MACHINE
     try:
         with winreg.OpenKeyEx(key=hkey,
@@ -345,10 +347,10 @@ def is_dotnet_x64_installed() -> bool:
                 query = winreg.EnumValue(reg, i)
                 if query[0] == "Version" and any(query[1]):
                     # print("Installed")
-                    return True
+                    return query[1]
     except FileNotFoundError as e:
         # Key not found, thus shouldn't be installed.
-        return False
+        return ""
 
 
 def get_xrd_loaded_dll() -> [str]:
@@ -357,3 +359,5 @@ def get_xrd_loaded_dll() -> [str]:
             for memp_map in pid.memory_maps():
                 yield memp_map.path
             return
+
+

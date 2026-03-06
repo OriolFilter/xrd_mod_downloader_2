@@ -51,7 +51,7 @@ class ModManagerApp(App):
             "patched": "Auto Start",
             "tag_name": " Current ",
             "latest_version_available": " Latest ",  # Or Up to date
-            "up_to_date": "Up To Date",
+            # "up_to_date": "Up To Date",
             "description": "Description",
         }
 
@@ -98,9 +98,9 @@ class ModManagerApp(App):
             try:
                 app.launch()
                 self.notify(f"Launched {app.app_name}.", severity="information")
-            # except XrdNotRunning:
-            #     self.notify(f"Can't launch app {app.app_name}.\nXrdApp is not running.",
-            #                 severity="error")
+            except XrdNotRunning:
+                self.notify(f"Can't launch app {app.app_name}.\nXrdApp is not running.",
+                            severity="error")
             except Exception as e:
                 self.notify(f"Can't launch app {app.app_name}.\nError: {e}.",
                             severity="error")
@@ -168,7 +168,8 @@ class ModManagerApp(App):
 
         self.notify(f"Mod {app.app_name} installed.")
 
-        self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
+        # self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
+        self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "patched"])
 
     @work(exclusive=True)
     async def action_patch_mod(self):
@@ -224,10 +225,10 @@ class ModManagerApp(App):
             # time.sleep(0.50)
             # latest_release = app.get_latest_release_available()
             # latest_release = "paco"
-            if app.tag_name and app.tag_name != app.latest_release_name:
-                tag_name_message = Text(app.tag_name, style="#d8db23 bold")
-            else:
+            if app.tag_name and app.up_to_date:
                 tag_name_message = Text(app.tag_name, style="#32a852")
+            else:
+                tag_name_message = Text(app.tag_name, style="#d8db23 bold")
             app_info = {
                 "app_name": app.app_name,
                 "tag_name": tag_name_message,
@@ -235,7 +236,7 @@ class ModManagerApp(App):
                 "installed": (NO, TRUE)[app.is_installed],
                 "patched": (NO, TRUE)[app.is_patched],
                 "description": app.description,
-                "up_to_date": (NO, TRUE)[app.up_to_date]
+                # "up_to_date": (NO, TRUE)[app.up_to_date]
             }
 
             for column in columns:

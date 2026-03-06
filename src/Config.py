@@ -27,7 +27,7 @@ class GlobalConfig:
                            description="Hitbox/framedata viewer mod",
                            _config=self),
             WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
-            DotNet(repo_owner="Microsoft", repo_name=".Net", _config=self,
+            DotNet(repo_owner="Microsoft", repo_name=".Net 6", _config=self,
                         description="Required to launch the Reversal Tool"),
             ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self),

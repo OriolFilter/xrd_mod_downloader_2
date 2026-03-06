@@ -35,3 +35,24 @@ Computer\HKEY_CURRENT_USER\SOFTWARE\Valve\Steam
 c:/program files (x86)/steam
 
 https://github.com/pywinauto/pywinauto
+
+> Can't launch app kkots/rev2-wakeup-tool.
+Error: PID still exists but it's a zombie (pid=100270).
+
+Probs cause not .Net
+
+```text
+wineprefix=
+/home/goblin/.local/share/Steam/steamapps/compatdata/520440/pfx
+```
+
+```sh
+[goblin@cave pfx]$ ls drive_c/Program\ Files\ \(x86\)/dotnet/
+dotnet.exe  LICENSE.txt  packs  sdk-manifests  swidtag    ThirdPartyNotices.txt
+host        metadata     sdk    shared         templates
+```
+
+# Tested on
+
+64 bit Endevour OS (Arch)
+64 bit Windows 10

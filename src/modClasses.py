@@ -3,22 +3,18 @@ import os.path
 import shutil
 import subprocess
 import sys
-import time
+import urllib.request
 from abc import ABC, abstractmethod
 from pathlib import Path
+from subprocess import DEVNULL
 from zipfile import ZipFile
 
 import psutil
 from github import GitRelease
 from github.GitReleaseAsset import GitReleaseAsset
-from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
-
-from subprocess import Popen, DEVNULL
 
 import functions
-
-import urllib.request
-from urllib.parse import urlsplit
+from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
 
 
 # from Config import GlobalConfig
@@ -29,7 +25,6 @@ class AppStruct(ABC):
     _config: object
     repo_owner: str
     repo_name: str
-    release_id: str | None = ""
     _tag_name: str | None = ""
     # app_type: str # Shouldn't be necessary/helpful.
     url_source_release: str | None = ""
@@ -82,7 +77,7 @@ class AppStruct(ABC):
         boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
         with open(boot_xrd_path, 'r', encoding="utf-8") as boot_xrd_file:
             for line in boot_xrd_file.readlines():
-                if line.startswith((f"start {self._bat_file_name}")):
+                if line.startswith(f"start {self._bat_file_name}"):
                     return True
         return False
 
@@ -230,7 +225,7 @@ FOR /L %%I IN (1,1,30) DO (
 
         new_file_contents: [str] = []
         with open(boot_xrd_path, 'r', encoding="utf-8") as file:
-            # Skip if line exists (ie, when "upgrading/changing the version" of the mod.
+            # Skip if line exists (ie, when "upgrading/changing the version" of the mod.)
             append_to_boot_xrd = True
 
             for line in file:
@@ -271,7 +266,6 @@ FOR /L %%I IN (1,1,30) DO (
         """
         self.url_source_release = release.url
         self.tag_name = release.tag_name
-        self.release_id = release.id
         if self.is_patched:
             if self._custom_is_patched:
                 self._custom_unpatch()
@@ -280,11 +274,8 @@ FOR /L %%I IN (1,1,30) DO (
 
     def export_config_dict(self) -> {str: str | int | None | bool}:
         return {
-            "release_id": self.release_id,
             "tag_name": self.tag_name,
             "url_source_release": self.url_source_release,
-            # "enabled": self.enabled,
-            # "hidden": self.hidden,
         }
 
     @property
@@ -399,7 +390,7 @@ FOR /L %%I IN (1,1,30) DO (
             case 'linux':
                 envs = xrd_process.environ()
                 wineloader = envs.get("WINELOADER")
-                #
+
                 if not wineloader:
                     raise WineLoaderNotFound
 
@@ -413,7 +404,7 @@ FOR /L %%I IN (1,1,30) DO (
                     "DISPLAY": envs.get("DISPLAY")
                 }
 
-                subprocess.Popen(
+                process = subprocess.Popen(
                     shell=False,
                     args=[
                         wineloader,
@@ -428,10 +419,9 @@ FOR /L %%I IN (1,1,30) DO (
                     start_new_session=True,
                 )
             case "win32":
-                subprocess.Popen(
+                process = subprocess.Popen(
                     shell=False,
                     args=[
-                        #                                         wineloader,
                         self.current_release_files_path.joinpath(self._executable_name).absolute(),
                         *self._launch_extra_args,
                     ],
@@ -443,6 +433,13 @@ FOR /L %%I IN (1,1,30) DO (
                 )
             case _:
                 raise NotImplementedError(f"OS {sys.platform} is currently not implemented.")
+
+        # TODO.
+        # Fixes Causes zombie process with the wakeup tool
+        # ps -aux | grep '<defunct>'
+        # $USER    105574  ... [start.exe] <defunct>
+        # case 'linux':
+        process.wait()
 
     @property
     def _launch_extra_args(self) -> [str]:
@@ -564,14 +561,16 @@ class WakeUpTool(AppStruct):
                     try:
                         for command in pid.cmdline():
                             if command.endswith("GGXrdReversalTool.exe"):
-#                               TODO bring app to foreground.
+                                # TODO bring app to foreground.
                                 return True
-                    except psutil.AccessDenied as e:
+                    except psutil.AccessDenied:
+                        pass
+                    except psutil.ZombieProcess:
                         pass
             case 'win32':
                 for pid in psutil.process_iter():
                     if "GGXrdReversalTool" in pid.name():
-#                       TODO bring app to foreground.
+                        # TODO bring app to foreground.
                         return True
         return False
 
@@ -651,7 +650,7 @@ class HitboxOverlay(AppStruct):
             case 'linux':
                 # Get to the steam "root" folder
                 # /home/$HOME/.local/share/Steam/steamapps
-                steam_apps_path = Path(self._config.xrd_path).parent.parent.parent
+                steam_apps_path = Path(self._config.xrd_path).parent.parent
 
                 drivec_windows_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/windows")
                 if drivec_windows_path.exists() and drivec_windows_path.is_dir():
@@ -738,7 +737,11 @@ class StandAloneExeRequirement(AppStruct, ABC):
 
     @property
     def latest_release(self) -> None:
-        return
+        """
+        Set to return none for compatibility reasons
+        :return:
+        """
+        return None
 
     @property
     @abstractmethod
@@ -761,9 +764,9 @@ class StandAloneExeRequirement(AppStruct, ABC):
         self.launch()
         self.url_source_release = self.url_source_release
         self.tag_name = self.latest_release_name
-        self.release_id = self.latest_release_name
         return True
 
+    # TODO Isn't this duplicated??
     @property
     def current_release_files_path(self) -> Path:
         return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(
@@ -773,75 +776,9 @@ class StandAloneExeRequirement(AppStruct, ABC):
         self.launch()
 
     def launch(self) -> None:
-        if self._is_installed:
-            raise Exception(f"Once App {self.__class__} is installed, it cannot be uninstalled nor patched")
+        # if self._is_installed:
+        #     raise Exception(f"Once App {self.__class__} is installed, it cannot be uninstalled nor patched")
         self._launch()
-
-    def _launch(self):
-        """
-        Launch the .exe
-
-        Wait for it to finish/close.
-        """
-        # TODO Linux
-        match sys.platform:
-            case 'linux':
-                # Linux needs Xrd running to find/confirm the wineprefix/loader locations
-                xrd_process = None
-                for pid in psutil.process_iter():
-                    if pid.name() == "GuiltyGearXrd.exe":
-                        xrd_process = pid
-                        break
-                del pid
-
-                if not xrd_process:
-                    raise XrdNotRunning
-
-                envs = xrd_process.environ()
-                wineloader = envs.get("WINELOADER")
-
-                if not wineloader:
-                    raise WineLoaderNotFound
-
-                wineprefix = envs.get("WINEPREFIX")
-                if not wineprefix:
-                    raise WinePrefixNotFound
-
-                envs = {
-                    "WINEFSYNC": "1",
-                    "WINEPREFIX": wineprefix,
-                    "DISPLAY": envs.get("DISPLAY")
-                }
-
-                process = subprocess.Popen(
-                    shell=False,
-                    args=[
-                        wineloader,
-                        self.current_release_files_path.joinpath(self._executable_name).absolute(),
-                        *self._launch_extra_args,
-                    ],
-                    env=envs,
-                    stdin=None,
-                    stdout=DEVNULL,
-                    stderr=DEVNULL,
-                    cwd=self.current_release_files_path.absolute(),
-                    start_new_session=True,
-                )
-            case 'win32':
-                process = subprocess.Popen(
-                    shell=False,
-                    args=[
-                        #                                         wineloader,
-                        self.current_release_files_path.joinpath(self._executable_name).absolute(),
-                        *self._launch_extra_args,
-                    ],
-                    stdin=None,
-                    stdout=DEVNULL,
-                    stderr=DEVNULL,
-                    cwd=self.current_release_files_path.absolute(),
-                    start_new_session=True,
-                )
-        process.wait()
 
     @property
     def is_installed(self) -> bool:
@@ -885,9 +822,35 @@ class VsRedistributable86(VsRedistributableBase):
 class DotNet(StandAloneExeRequirement):
     # Seems to work a bit weird/funky on linux
     # TODO check linux
+
+    # @property
+    # TODO, on windows can get the version from the registry.
+    # def tag_name(self) -> str:
+    #     if self.is_installed:
+    #         return self.latest_release_name
+    #     return ""
+
+    @property
+    def tag_name(self) -> str:
+        if self.is_installed:
+            return self._dotnet_version
+        return ""
+
+    @tag_name.setter
+    def tag_name(self, tag_name: str):
+        self._tag_name = tag_name
+
+    @property
+    def latest_release_name(self) -> str:
+        return "6.0.X"
+
     @property
     def _launch_extra_args(self) -> [str]:
-        return ["/install", "/quiet", "/norestart"]
+        match sys.platform:
+            case 'win32':
+                return ["/install", "/quiet", "/norestart"]
+            case 'linux':
+                return []
 
     @property
     def _executable_name(self) -> str:
@@ -898,9 +861,10 @@ class DotNet(StandAloneExeRequirement):
                 # ls $WINEPREFIX/drive_c/'Program Files'/dotnet/shared/Microsoft.WindowsDesktop.App
                 # Prints:
                 # 6.0.33 (so basically a list of folder, and folders are named after versions, you need at least one with > 6.0.0)
-                steam_apps_path = Path(self._config.xrd_path).parent.parent.parent
+                steam_apps_path = Path(self._config.xrd_path).parent.parent
                 drivec_windows_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/windows")
-                if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath('syswow64'):
+                if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath(
+                        'syswow64').is_dir():
                     arch = "x64"
                 else:
                     arch = "x86"
@@ -912,31 +876,61 @@ class DotNet(StandAloneExeRequirement):
                 else:
                     arch = "x86"
                 return f"dotnet-sdk-win-{arch}.exe"
-
+        raise NotImplementedError
 
     @property
     def _download_file_url(self) -> str:
         return f"https://aka.ms/dotnet/6.0/{self._executable_name}"
 
     @property
-    def latest_release_name(self) -> str:
-        # TODO dotnet could fetch the current version from registry since the flag is there (Windows).
-        return "6.0"
+    def _is_installed(self) -> bool:
+        return any(self._dotnet_version)
 
     @property
-    def _is_installed(self) -> bool:
+    def _dotnet_version(self) -> str:
+        """
+        Return the dotnet version.
+
+        This assumes that the xrd path already found.
+        :return:
+        """
+        from sys import maxsize
         match sys.platform:
             case 'linux':
-                # TODO
-                # Also, from older messages, how to check if .NET version is installed:
-                # ls $WINEPREFIX/drive_c/'Program Files'/dotnet/shared/Microsoft.WindowsDesktop.App
-                # Prints:
-                # 6.0.33 (so basically a list of folder, and folders are named after versions, you need at least one with > 6.0.0)
-                return False
-            case "win32":
-                from sys import maxsize
+                from os import listdir
+                # List folders in dotnet sdk.
+                # Sort by name (meaning bigger versions will come first)
+                # If dotnet.dll exists return the folder name (aka the version)
+
+                steam_apps_path = Path(self._config.xrd_path).parent.parent
                 if maxsize > 2 ** 32:
-                    return functions.is_dotnet_x64_installed()
+                    dotnet_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/Program Files/dotnet/sdk")
                 else:
-                    return functions.is_dotnet_x86_installed()
-        return False
+                    dotnet_path = steam_apps_path.joinpath(
+                        "compatdata/520440/pfx/drive_c/Program Files (x86)/dotnet/sdk")
+                if not dotnet_path.exists():
+                    return ""
+
+                dotnet_sdk_dirs = []
+                dotnet_sdk_files = listdir(dotnet_path)
+                dotnet_sdk_files.sort(reverse=True)
+
+                for file in dotnet_sdk_files:
+                    file_path = dotnet_path.joinpath(file)
+                    if file.startswith("6.0") and file_path.is_dir():
+                        dotnet_sdk_dirs.append(file_path.absolute())
+
+                for sdkpath in dotnet_sdk_dirs:
+                    dotnet_dll = sdkpath.joinpath("dotnet.dll")
+                    print(dotnet_dll.is_dir())
+                    if dotnet_dll.exists() and dotnet_dll.is_file() and not dotnet_dll.is_dir():
+                        return sdkpath.name
+
+                return ""
+
+            case "win32":
+                if maxsize > 2 ** 32:
+                    return functions.get_dotnet_x64_version_windows()
+                else:
+                    return functions.get_dotnet_x86_version_windows()
+        return ""
