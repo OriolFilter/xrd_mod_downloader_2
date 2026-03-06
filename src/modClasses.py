@@ -206,10 +206,10 @@ FOR /L %%I IN (1,1,30) DO (
   %CHECK_XRD% && goto :finish || (ping -n 2 127.0.0.1 > NU)
 )
 :finish
-%CHECK_XRD% && start /MIN {app_directory}/{takeover_inector} {extra_args} || echo Xrd didn't launch...
+%CHECK_XRD% && start /MIN {app_directory}/{executable_name} {extra_args} || echo Xrd didn't launch...
 """.format(
             app_directory=self.app_name.replace("/", "_"),
-            takeover_inector=self._executable_name,
+            executable_name=self._executable_name,
             extra_args=" ".join(f'"{arg}"' for arg in self._launch_extra_args)
         )
         if not self._win32_mod_folder_path.exists():
