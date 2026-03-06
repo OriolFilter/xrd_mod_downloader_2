@@ -290,9 +290,6 @@ def is_redist_x64_installed() -> bool:
 
 
 def is_redist_x86_installed() -> bool:
-    # TODO figure it out
-    # Wow64 only exist on 64-bit windows.
-    # On Win32 Won't work
     import winreg
     # Computer\HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86
     hkey = winreg.HKEY_LOCAL_MACHINE

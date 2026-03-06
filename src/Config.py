@@ -46,9 +46,13 @@ class GlobalConfig:
             case 'linux':
                 pass
             case "win32":
-                mod_list.append(
-                    VsRedistributable64(repo_owner="Microsoft", repo_name="VsCppRedist_x64", _config=self,
-                                        description="Required to launch most mods."))
+                from sys import maxsize
+                if maxsize > 2 ** 32:
+                    # VsRedistribute only works for x64 devices
+                    mod_list.append(
+                        VsRedistributable64(repo_owner="Microsoft", repo_name="VsCppRedist_x64", _config=self,
+                                            description="Required to launch most mods."))
+                # TODO Probably unused if x64 exists.
                 mod_list.append(
                     VsRedistributable86(repo_owner="Microsoft", repo_name="VsCppRedist_x86", _config=self,
                                         description="Required to launch most mods."))
