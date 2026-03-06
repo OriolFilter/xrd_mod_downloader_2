@@ -872,7 +872,7 @@ class DotNet(StandAloneExeRequirement):
                     arch = "x86"
                 # TODO
                 # return f"dotnet-runtime-win-{arch}.exe"
-                return f"dotnet-sdk-win-{arch}.exe"
+                return f"dotnet-runtime-win-{arch}.exe"
         raise NotImplementedError
 
     @property
