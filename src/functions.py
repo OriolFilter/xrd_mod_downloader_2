@@ -354,6 +354,10 @@ def get_dotnet_x64_version_windows() -> str:
 
 
 def get_xrd_loaded_dll() -> [str]:
+    """
+    Returns a list of loaded dll files/libraries/other(?)
+    :return:
+    """
     for pid in psutil.process_iter():
         if pid.name() == "GuiltyGearXrd.exe":
             for memp_map in pid.memory_maps():
