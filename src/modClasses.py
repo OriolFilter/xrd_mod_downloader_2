@@ -863,13 +863,15 @@ class DotNet(StandAloneExeRequirement):
                     arch = "x64"
                 else:
                     arch = "x86"
-                return f"dotnet-sdk-win-{arch}.exe"
+                return f"dotnet-runtime-win-{arch}.exe"
             case "win32":
                 from sys import maxsize
                 if maxsize > 2 ** 32:
                     arch = "x64"
                 else:
                     arch = "x86"
+                # TODO
+                # return f"dotnet-runtime-win-{arch}.exe"
                 return f"dotnet-sdk-win-{arch}.exe"
         raise NotImplementedError
 
@@ -899,10 +901,10 @@ class DotNet(StandAloneExeRequirement):
 
                 steam_apps_path = Path(self._config.xrd_path).parent.parent
                 if maxsize > 2 ** 32:
-                    dotnet_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/Program Files/dotnet/sdk")
+                    dotnet_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/Program Files/dotnet/shared/Microsoft.NETCore.App/")
                 else:
                     dotnet_path = steam_apps_path.joinpath(
-                        "compatdata/520440/pfx/drive_c/Program Files (x86)/dotnet/sdk")
+                        "compatdata/520440/pfx/drive_c/Program Files (x86)/dotnet/shared/Microsoft.NETCore.App/")
                 if not dotnet_path.exists():
                     return ""
 
@@ -916,7 +918,7 @@ class DotNet(StandAloneExeRequirement):
                         dotnet_sdk_dirs.append(file_path.absolute())
 
                 for sdkpath in dotnet_sdk_dirs:
-                    dotnet_dll = sdkpath.joinpath("dotnet.dll")
+                    dotnet_dll = sdkpath.joinpath(".version")
                     if dotnet_dll.exists() and dotnet_dll.is_file() and not dotnet_dll.is_dir():
                         return sdkpath.name
 
