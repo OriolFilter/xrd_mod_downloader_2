@@ -22,14 +22,14 @@ class GlobalConfig:
 
     def __init__(self):
         mod_list = [
+            DotNet(repo_owner="Microsoft", repo_name=".Net 6", _config=self,
+                        description="Required to launch the Reversal Tool"),
             HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
                            repo_owner="kkots",
                            description="Hitbox/framedata viewer mod",
                            _config=self),
             WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
-            DotNet(repo_owner="Microsoft", repo_name=".Net 6", _config=self,
-                        description="Required to launch the Reversal Tool"),
-            ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
+            # ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self),
             # #Iquis would need to verify download differenlty
 

@@ -234,7 +234,7 @@ FOR /L %%I IN (1,1,30) DO (
                     new_file_contents.append(f":: {line}")
                 elif any(self._bat_file_name) and line.startswith(f":: start {self._bat_file_name}"):
                     # If bat exists but is commented uncomment
-                    new_file_contents.append(f"\nstart {self._bat_file_name}\n")
+                    new_file_contents.append(f"start {self._bat_file_name}\n")
                 else:
                     new_file_contents.append(line)
 
@@ -243,7 +243,7 @@ FOR /L %%I IN (1,1,30) DO (
                     append_to_boot_xrd = False
             # Append boot.bat
             if append_to_boot_xrd:
-                new_file_contents.append(f"\nstart {self._bat_file_name}")
+                new_file_contents.append(f"start {self._bat_file_name}\n")
 
         with open(boot_xrd_path, "w", encoding="utf-8") as file:
             file.writelines(new_file_contents)
