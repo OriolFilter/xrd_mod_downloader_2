@@ -595,7 +595,7 @@ class ReplayTakeover(AppStruct):
         return "GGXrdReplayTakeoverInjector.exe"
 
     def _get_assets_whitelist(self, release: GitRelease) -> [str]:
-        assets_whitelist = ["GGXrdReplayTakeover.zip".format(release.tag_name)]
+        assets_whitelist = ["GGXrdReplayTakeover.zip"]
         return assets_whitelist
 
 
