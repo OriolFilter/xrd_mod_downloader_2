@@ -252,7 +252,6 @@ FOR /L %%I IN (1,1,30) DO (
         for file in self._required_files:
             source_file_path = self.current_release_files_path.joinpath(file)
             destination_file_path = self._win32_mod_folder_path.joinpath(file)
-            Path(self._config.xrd_path).joinpath(boot_xrd_bat)
             if source_file_path.exists() and source_file_path.is_file() and not destination_file_path.is_dir():
                 shutil.copy2(source_file_path, destination_file_path)
             else:
