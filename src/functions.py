@@ -360,5 +360,3 @@ def get_xrd_loaded_dll() -> [str]:
             for memp_map in pid.memory_maps():
                 yield memp_map.path
             return
-
-
