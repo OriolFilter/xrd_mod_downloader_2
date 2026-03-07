@@ -8,7 +8,7 @@ from textual.widgets import DataTable, Footer
 
 from Config import GlobalConfig
 from exceptions import XrdNotRunning
-from src.appExpanded import AppStruct
+from appBase import AppStruct
 
 NO = Text("No", style="#a83a32 bold")
 FALSE = NO

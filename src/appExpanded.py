@@ -15,13 +15,16 @@ from github.GitReleaseAsset import GitReleaseAsset
 
 import functions
 from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
-from appBase import InjectorApp
+from appBase import InjectorApp, StandAloneExeRequirement, GithubApp
 
 
 # from Config import GlobalConfig
 
 
-class GenericApp(InjectorApp):
+class GenericGithubApp(InjectorApp, GithubApp):
+    """
+    Used as placeholder, sometimes.
+    """
 
     @property
     def _key_dll(self) -> str:
@@ -39,7 +42,7 @@ class GenericApp(InjectorApp):
         raise NotImplementedError("_download_app for app {}".format(self.__class__))
 
 
-class WakeUpTool(InjectorApp):
+class WakeUpTool(InjectorApp, GithubApp):
 
     @property
     def _key_dll(self) -> str:
@@ -103,7 +106,7 @@ class WakeUpTool(InjectorApp):
         return False
 
 
-class ReplayTakeover(InjectorApp):
+class ReplayTakeover(InjectorApp, GithubApp):
 
     @property
     def _key_dll(self) -> str:
@@ -125,7 +128,7 @@ class ReplayTakeover(InjectorApp):
         return assets_whitelist
 
 
-class HitboxOverlay(InjectorApp):
+class HitboxOverlay(InjectorApp, GithubApp):
     @property
     def _key_dll(self) -> str:
         return "ggxrd_hitbox_overlay.dll"
@@ -206,123 +209,6 @@ class HitboxOverlay(InjectorApp):
         :return:
         """
         return ["-force"]
-
-
-class StandAloneExeRequirement(InjectorApp, ABC):
-
-    @property
-    def tag_name(self) -> str:
-        if self.is_installed:
-            return self.latest_release_name
-        return ""
-
-    @tag_name.setter
-    def tag_name(self, _: str):
-        pass
-
-    @property
-    def up_to_date(self) -> bool:
-        if self.is_installed:
-            return True
-        return False
-
-    @property
-    def _key_dll(self) -> str:
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def _download_file_url(self) -> str:
-        """
-        URL of the file to download.
-        :return:
-        """
-        return ""
-
-    @property
-    def is_patched(self) -> bool:
-        return self.is_installed
-
-    async def download_release(self, release: object):
-        if len(self._download_file_url) < 1:
-            raise Exception(
-                "App has '{}' no available to download.".format(
-                    self.__class__)
-            )
-
-        downloads_files_path = self.current_release_files_path
-        if not downloads_files_path.exists():
-            downloads_files_path.mkdir(parents=True)
-
-        urllib.request.urlretrieve(self._download_file_url, downloads_files_path.joinpath(self._executable_name))
-
-    @property
-    def _required_files(self) -> [str]:
-        return [self._executable_name]
-
-    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
-        raise NotImplementedError
-
-    @property
-    def latest_release(self) -> None:
-        """
-        Set to return none for compatibility reasons.
-        Don't use.
-        :return:
-        """
-        return None
-
-    @property
-    @abstractmethod
-    def latest_release_name(self) -> str:
-        """
-        Return the desired target version.
-        Required to determine the installation path.
-        :return:
-        """
-        raise NotImplementedError
-
-    async def install_release(self, release: GitRelease) -> bool:
-        """
-        Execute the .exe
-
-        Wait for it to finish.
-
-        Change values
-        """
-        self.launch()
-        self.url_source_release = self.url_source_release
-        self.tag_name = self.latest_release_name
-        return True
-
-    @property
-    def current_release_files_path(self) -> Path:
-        """
-        Since the installation step includes setting the self.name_tag, it's using the latest_release_name to determine
-        the download destination.
-
-        self.latest_release_name is hardcoded.
-        :return:
-        """
-        # TODO fix/remove installation step
-        return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(
-            self.latest_release_name)
-
-    def patch(self):
-        self.launch()
-
-    def launch(self) -> None:
-        # if self._is_installed:
-        #     raise Exception(f"Once App {self.__class__} is installed, it cannot be uninstalled nor patched")
-        self._launch()
-
-    @property
-    def is_installed(self) -> bool:
-        return self._is_installed
-
-    @property
-    def _is_installed(self) -> bool:
-        return any(self._vs_redist_version)
 
 
 class VsRedistributableBase(StandAloneExeRequirement, ABC):
