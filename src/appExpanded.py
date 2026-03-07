@@ -1,0 +1,482 @@
+import dataclasses
+import os.path
+import shutil
+import subprocess
+import sys
+import urllib.request
+from abc import ABC, abstractmethod
+from pathlib import Path
+from subprocess import DEVNULL
+from zipfile import ZipFile
+
+import psutil
+from github import GitRelease
+from github.GitReleaseAsset import GitReleaseAsset
+
+import functions
+from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
+from appBase import InjectorApp
+
+
+# from Config import GlobalConfig
+
+
+class GenericApp(InjectorApp):
+
+    @property
+    def _key_dll(self) -> str:
+        return ""
+
+    @property
+    def _required_files(self) -> [str]:
+        return []
+
+    @property
+    def _executable_name(self) -> str:
+        return "placeholder.exe"
+
+    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+        raise NotImplementedError("_download_app for app {}".format(self.__class__))
+
+
+class WakeUpTool(InjectorApp):
+
+    @property
+    def _key_dll(self) -> str:
+        """
+        Wakeup tool is allowed to be launched multiple times.
+        :return:
+        """
+        return ""
+
+    @property
+    def _required_files(self) -> [str]:
+        return [
+            "appsettings.json",
+            "GGXrdReversalTool.deps.json",
+            "GGXrdReversalTool.dll",
+            "GGXrdReversalTool.exe",
+            "GGXrdReversalTool.Library.dll",
+            "GGXrdReversalTool.runtimeconfig.json",
+            "Microsoft.Extensions.Configuration.Abstractions.dll",
+            "Microsoft.Extensions.Configuration.Binder.dll",
+            "Microsoft.Extensions.Configuration.dll",
+            "Microsoft.Extensions.Configuration.FileExtensions.dll",
+            "Microsoft.Extensions.Configuration.Json.dll",
+            "Microsoft.Extensions.FileProviders.Abstractions.dll",
+            "Microsoft.Extensions.FileProviders.Physical.dll",
+            "Microsoft.Extensions.FileSystemGlobbing.dll",
+            "Microsoft.Extensions.Primitives.dll",
+            "System.Text.Encodings.Web.dll",
+            "System.Text.Json.dll",
+        ]
+
+    @property
+    def _executable_name(self) -> str:
+        return "GGXrdReversalTool.exe"
+
+    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+        assets_whitelist = ["GGXrdReversalTool.{}.zip".format(release.tag_name),
+                            "GGXrdReversalTool-{}.zip".format(release.tag_name)]
+
+        return assets_whitelist
+
+    @property
+    def _is_injected(self) -> bool:
+        match sys.platform:
+            case 'linux':
+                for pid in psutil.process_iter():
+                    try:
+                        for command in pid.cmdline():
+                            if command.endswith("GGXrdReversalTool.exe"):
+                                # TODO bring app to foreground.
+                                return True
+                    except psutil.AccessDenied:
+                        pass
+                    except psutil.ZombieProcess:
+                        pass
+            case 'win32':
+                for pid in psutil.process_iter():
+                    if "GGXrdReversalTool" in pid.name():
+                        # TODO bring app to foreground.
+                        return True
+        return False
+
+
+class ReplayTakeover(InjectorApp):
+
+    @property
+    def _key_dll(self) -> str:
+        return "GGXrdReplayTakeover.dll"
+
+    @property
+    def _required_files(self) -> [str]:
+        return [
+            self._key_dll,
+            self._executable_name,
+        ]
+
+    @property
+    def _executable_name(self) -> str:
+        return "GGXrdReplayTakeoverInjector.exe"
+
+    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+        assets_whitelist = ["GGXrdReplayTakeover.zip"]
+        return assets_whitelist
+
+
+class HitboxOverlay(InjectorApp):
+    @property
+    def _key_dll(self) -> str:
+        return "ggxrd_hitbox_overlay.dll"
+
+    @property
+    def _custom_is_patched(self) -> bool:
+        """
+        Code from kkots.
+        """
+
+        hardcoded_patch_place_raw = 0x970126
+        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+
+        with open(xrd_exe_path, "rb") as file:
+            file.seek(hardcoded_patch_place_raw)
+            if file.read(1) != b'\xe9':
+                return False
+        return True
+
+    def _custom_unpatch(self):
+        # TODO
+        # Prevent unpatch if version is less than 15
+        # Windows doesn't allow to write a file if it's already open.
+        # So... on Windows raise an error if Xrd is open.
+        if sys.platform == 'win32':
+            for pid in psutil.process_iter():
+                if pid.name() == "GuiltyGearXrd.exe":
+                    raise Exception(f"Cannot unpatch '{self.app_name}' if Xrd is running.\n"
+                                    "Please close Xrd before using.")
+        functions.unpatch_hitbox_overlay_exe(Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe"))
+
+    @property
+    def _required_files(self) -> [str]:
+        return [
+            self._executable_name,
+            self._key_dll,
+            "ggxrd_hitbox_overlay.ini"
+        ]
+
+    @property
+    def _executable_name(self) -> str:
+        """
+        If syswow64 is found, use the 64bit injector, else the 32.
+
+        If not linux or windows raise error.
+        :return: str
+        """
+
+        match sys.platform:
+            case 'linux':
+                # Get to the steam "root" folder
+                # /home/$HOME/.local/share/Steam/steamapps
+                steam_apps_path = Path(self._config.xrd_path).parent.parent
+
+                drivec_windows_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/windows")
+                if drivec_windows_path.exists() and drivec_windows_path.is_dir():
+                    if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath('syswow64'):
+                        return "ggxrd_hitbox_injector64bit.exe"
+                return "ggxrd_hitbox_injector.exe"
+
+            case 'win32':
+                from sys import maxsize
+                if maxsize > 2 ** 32:
+                    return "ggxrd_hitbox_injector64bit.exe"
+                return "ggxrd_hitbox_injector.exe"
+
+            case _:
+                raise NotImplementedError
+
+    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+        assets_whitelist = ["ggxrd_hitbox_overlay.zip"]
+        return assets_whitelist
+
+    @property
+    def _launch_extra_args(self) -> [str]:
+        """
+        "Force" the injection to avoid the window popup
+        :return:
+        """
+        return ["-force"]
+
+
+class StandAloneExeRequirement(InjectorApp, ABC):
+
+    @property
+    def tag_name(self) -> str:
+        if self.is_installed:
+            return self.latest_release_name
+        return ""
+
+    @tag_name.setter
+    def tag_name(self, _: str):
+        pass
+
+    @property
+    def up_to_date(self) -> bool:
+        if self.is_installed:
+            return True
+        return False
+
+    @property
+    def _key_dll(self) -> str:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def _download_file_url(self) -> str:
+        """
+        URL of the file to download.
+        :return:
+        """
+        return ""
+
+    @property
+    def is_patched(self) -> bool:
+        return self.is_installed
+
+    async def download_release(self, release: object):
+        if len(self._download_file_url) < 1:
+            raise Exception(
+                "App has '{}' no available to download.".format(
+                    self.__class__)
+            )
+
+        downloads_files_path = self.current_release_files_path
+        if not downloads_files_path.exists():
+            downloads_files_path.mkdir(parents=True)
+
+        urllib.request.urlretrieve(self._download_file_url, downloads_files_path.joinpath(self._executable_name))
+
+    @property
+    def _required_files(self) -> [str]:
+        return [self._executable_name]
+
+    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+        raise NotImplementedError
+
+    @property
+    def latest_release(self) -> None:
+        """
+        Set to return none for compatibility reasons.
+        Don't use.
+        :return:
+        """
+        return None
+
+    @property
+    @abstractmethod
+    def latest_release_name(self) -> str:
+        """
+        Return the desired target version.
+        Required to determine the installation path.
+        :return:
+        """
+        raise NotImplementedError
+
+    async def install_release(self, release: GitRelease) -> bool:
+        """
+        Execute the .exe
+
+        Wait for it to finish.
+
+        Change values
+        """
+        self.launch()
+        self.url_source_release = self.url_source_release
+        self.tag_name = self.latest_release_name
+        return True
+
+    @property
+    def current_release_files_path(self) -> Path:
+        """
+        Since the installation step includes setting the self.name_tag, it's using the latest_release_name to determine
+        the download destination.
+
+        self.latest_release_name is hardcoded.
+        :return:
+        """
+        # TODO fix/remove installation step
+        return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(
+            self.latest_release_name)
+
+    def patch(self):
+        self.launch()
+
+    def launch(self) -> None:
+        # if self._is_installed:
+        #     raise Exception(f"Once App {self.__class__} is installed, it cannot be uninstalled nor patched")
+        self._launch()
+
+    @property
+    def is_installed(self) -> bool:
+        return self._is_installed
+
+    @property
+    def _is_installed(self) -> bool:
+        return any(self._vs_redist_version)
+
+
+class VsRedistributableBase(StandAloneExeRequirement, ABC):
+
+    @property
+    def tag_name(self) -> str:
+        if self.is_installed:
+            return self._vs_redist_version
+        return ""
+
+    @tag_name.setter
+    def tag_name(self, tag_name: str):
+        pass
+
+    @property
+    def _is_installed(self) -> bool:
+        return any(self._vs_redist_version)
+
+    @property
+    def _launch_extra_args(self) -> [str]:
+        return ["/install", "/quiet", "/norestart"]
+
+    @property
+    def _download_file_url(self) -> str:
+        return f"https://aka.ms/vs/17/release/{self._executable_name}"
+
+    @property
+    def latest_release_name(self) -> str:
+        return "14"
+
+    @property
+    def _vs_redist_version(self) -> str:
+        raise NotImplementedError
+
+
+class VsRedistributable64(VsRedistributableBase):
+    @property
+    def _executable_name(self) -> str:
+        return "vc_redist.x64.exe"
+
+    @property
+    def _vs_redist_version(self) -> str:
+        return functions.redist_x64_version()
+
+
+class VsRedistributable86(VsRedistributableBase):
+    @property
+    def _executable_name(self) -> str:
+        return "vc_redist.x86.exe"
+
+    @property
+    def _vs_redist_version(self) -> str:
+        return functions.redist_x86_version()
+
+
+class DotNet(StandAloneExeRequirement):
+    @property
+    def tag_name(self) -> str:
+        if self.is_installed:
+            return self._dotnet_version
+        return ""
+
+    @tag_name.setter
+    def tag_name(self, tag_name: str):
+        pass
+
+    @property
+    def latest_release_name(self) -> str:
+        return "6.0.X"
+
+    @property
+    def _launch_extra_args(self) -> [str]:
+        match sys.platform:
+            case 'win32':
+                return ["/install", "/quiet", "/norestart"]
+            case 'linux':
+                return []
+
+    @property
+    def _executable_name(self) -> str:
+        match sys.platform:
+            case 'linux':
+                steam_apps_path = Path(self._config.xrd_path).parent.parent
+                drivec_windows_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/windows")
+                if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath(
+                        'syswow64').is_dir():
+                    arch = "x64"
+                else:
+                    arch = "x86"
+                return f"dotnet-runtime-win-{arch}.exe"
+            case "win32":
+                from sys import maxsize
+                if maxsize > 2 ** 32:
+                    arch = "x64"
+                else:
+                    arch = "x86"
+                # TODO
+                # return f"dotnet-runtime-win-{arch}.exe"
+                return f"dotnet-runtime-win-{arch}.exe"
+        raise NotImplementedError
+
+    @property
+    def _download_file_url(self) -> str:
+        return f"https://aka.ms/dotnet/6.0/{self._executable_name}"
+
+    @property
+    def _is_installed(self) -> bool:
+        return any(self._dotnet_version)
+
+    @property
+    def _dotnet_version(self) -> str:
+        """
+        Return the dotnet version.
+
+        This assumes that the xrd path already found.
+        :return:
+        """
+        from sys import maxsize
+        match sys.platform:
+            case 'linux':
+                from os import listdir
+                # List folders in dotnet sdk.
+                # Sort by name (meaning bigger versions will come first)
+                # If dotnet.dll exists return the folder name (aka the version)
+
+                steam_apps_path = Path(self._config.xrd_path).parent.parent
+                if maxsize > 2 ** 32:
+                    dotnet_path = steam_apps_path.joinpath(
+                        "compatdata/520440/pfx/drive_c/Program Files/dotnet/shared/Microsoft.NETCore.App/")
+                else:
+                    dotnet_path = steam_apps_path.joinpath(
+                        "compatdata/520440/pfx/drive_c/Program Files (x86)/dotnet/shared/Microsoft.NETCore.App/")
+                if not dotnet_path.exists():
+                    return ""
+
+                dotnet_sdk_dirs = []
+                dotnet_sdk_files = listdir(dotnet_path)
+                dotnet_sdk_files.sort(reverse=True)
+
+                for file in dotnet_sdk_files:
+                    file_path = dotnet_path.joinpath(file)
+                    if file.startswith("6.0") and file_path.is_dir():
+                        dotnet_sdk_dirs.append(file_path.absolute())
+
+                for sdkpath in dotnet_sdk_dirs:
+                    dotnet_dll = sdkpath.joinpath(".version")
+                    if dotnet_dll.exists() and dotnet_dll.is_file() and not dotnet_dll.is_dir():
+                        return sdkpath.name
+
+                return ""
+
+            case "win32":
+                if maxsize > 2 ** 32:
+                    return functions.get_dotnet_x64_version_windows()
+                else:
+                    return functions.get_dotnet_x86_version_windows()
+        return ""

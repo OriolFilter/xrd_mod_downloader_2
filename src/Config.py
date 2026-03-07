@@ -6,7 +6,8 @@ from pathlib import Path
 import psutil
 from github import Github
 
-from modClasses import AppStruct, WakeUpTool, HitboxOverlay, ReplayTakeover, VsRedistributable64, VsRedistributable86, \
+from appBase import AppStruct
+from appExpanded import VsRedistributable64, VsRedistributable86, \
     DotNet
 from exceptions import XrdFolderNotValid, XrdFolderNotFound
 
