@@ -798,6 +798,7 @@ class StandAloneExeRequirement(AppStruct, ABC):
     def _is_installed(self) -> bool:
         return any(self._vs_redist_version)
 
+
 class VsRedistributableBase(StandAloneExeRequirement, ABC):
 
     @property
@@ -827,7 +828,7 @@ class VsRedistributableBase(StandAloneExeRequirement, ABC):
         return "14"
 
     @property
-    def _vs_redist_version(self)-> str:
+    def _vs_redist_version(self) -> str:
         raise NotImplementedError
 
 
@@ -840,6 +841,7 @@ class VsRedistributable64(VsRedistributableBase):
     def _vs_redist_version(self) -> str:
         return functions.redist_x64_version()
 
+
 class VsRedistributable86(VsRedistributableBase):
     @property
     def _executable_name(self) -> str:
@@ -848,6 +850,7 @@ class VsRedistributable86(VsRedistributableBase):
     @property
     def _vs_redist_version(self) -> str:
         return functions.redist_x86_version()
+
 
 class DotNet(StandAloneExeRequirement):
     @property
@@ -883,7 +886,6 @@ class DotNet(StandAloneExeRequirement):
                     arch = "x64"
                 else:
                     arch = "x86"
-                return f"dotnet-runtime-win-{arch}.exe"
             case "win32":
                 from sys import maxsize
                 if maxsize > 2 ** 32:
@@ -891,9 +893,9 @@ class DotNet(StandAloneExeRequirement):
                 else:
                     arch = "x86"
                 # TODO
-                # return f"dotnet-runtime-win-{arch}.exe"
-                return f"dotnet-runtime-win-{arch}.exe"
-        raise NotImplementedError
+            case _:
+                raise NotImplementedError
+        return f"dotnet-sdk-win-{arch}.exe"
 
     @property
     def _download_file_url(self) -> str:
@@ -910,6 +912,9 @@ class DotNet(StandAloneExeRequirement):
 
         This assumes that the xrd path already found.
         :return:
+
+        # TODO improve checking.
+        # Differentiate SDK from runtime. (aka find a previous commit)
         """
         from sys import maxsize
         match sys.platform:
@@ -921,7 +926,8 @@ class DotNet(StandAloneExeRequirement):
 
                 steam_apps_path = Path(self._config.xrd_path).parent.parent
                 if maxsize > 2 ** 32:
-                    dotnet_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/Program Files/dotnet/shared/Microsoft.NETCore.App/")
+                    dotnet_path = steam_apps_path.joinpath(
+                        "compatdata/520440/pfx/drive_c/Program Files/dotnet/shared/Microsoft.NETCore.App/")
                 else:
                     dotnet_path = steam_apps_path.joinpath(
                         "compatdata/520440/pfx/drive_c/Program Files (x86)/dotnet/shared/Microsoft.NETCore.App/")
