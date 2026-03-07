@@ -298,17 +298,15 @@ class DotNet(StandAloneExeRequirement):
                     arch = "x64"
                 else:
                     arch = "x86"
-                return f"dotnet-runtime-win-{arch}.exe"
             case "win32":
                 from sys import maxsize
                 if maxsize > 2 ** 32:
                     arch = "x64"
                 else:
                     arch = "x86"
-                # TODO
-                # return f"dotnet-runtime-win-{arch}.exe"
-                return f"dotnet-runtime-win-{arch}.exe"
-        raise NotImplementedError
+            case _:
+                raise NotImplementedError
+        return f"dotnet-sdk-win-{arch}.exe"
 
     @property
     def _download_file_url(self) -> str:
@@ -326,6 +324,9 @@ class DotNet(StandAloneExeRequirement):
         This assumes that the xrd path already found.
         :return:
         """
+
+        # TODO improve checking.
+        # Differentiate SDK from runtime. (aka find a previous commit)
         from sys import maxsize
         match sys.platform:
             case 'linux':
