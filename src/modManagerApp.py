@@ -131,8 +131,9 @@ class ModManagerApp(App):
     async def action_update_app_to_latest(self):
         self.__update_app_to_release()
 
+
     @work(exclusive=True)
-    async def __update_app_to_release(self, release: GitRelease = None):
+    async def __update_app_to_release(self):
         """
         Calls download and install methods from the app class.
 
@@ -142,10 +143,37 @@ class ModManagerApp(App):
         :return:
         """
         app = self.selected_app
-        if release is None:
-            release = app.latest_release
         # TODO check if its already download, skipp download if exists
-        self.notify(f"Starting download.\nApp: {app.app_name}\nRelease: {app.latest_release_name}",
+        # self.notify(f"Starting update.\nApp: {app.app_name}\nRelease: {app.latest_release_name}",
+        self.notify(f"Starting update.\nApp: {app.app_name}.",
+                    severity="warning")
+        async with asyncio.TaskGroup() as tg:
+            update = tg.create_task(app.update_app_to_latest())
+
+        if not update.done():
+            # TODO handle errors!
+            # No clue under which circumstances this would occur but whatever
+            self.notify(f"Failed to update {app.app_name}", severity="error")
+            return 0
+
+        # Yield messages(?)
+        self.notify(f"Mod {app.app_name} updated.")
+        self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "patched"])
+
+    @work(exclusive=True)
+    async def __update_app_to_release_old(self):
+        """
+        Calls download and install methods from the app class.
+
+        If no release is given, it will update to latest.
+
+        Notify through the process.
+        :return:
+        """
+        app = self.selected_app
+        release = app.latest_release
+        # TODO check if its already download, skipp download if exists
+        self.notify(f"Starting download.\nApp: {app.app_name}\nRelease: {app.latest_version_name}",
                     severity="warning")
         async with asyncio.TaskGroup() as tg:
             download = tg.create_task(app.download_release(release=release))
@@ -232,7 +260,7 @@ class ModManagerApp(App):
             app_info = {
                 "app_name": app.app_name,
                 "tag_name": tag_name_message,
-                "latest_version_available": app.latest_release_name,
+                "latest_version_available": app.latest_version_name,
                 "installed": (NO, TRUE)[app.is_installed],
                 "patched": (NO, TRUE)[app.is_patched],
                 "description": app.description,

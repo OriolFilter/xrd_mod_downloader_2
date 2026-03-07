@@ -236,7 +236,7 @@ class VsRedistributableBase(StandAloneExeRequirement, ABC):
         return f"https://aka.ms/vs/17/release/{self._executable_name}"
 
     @property
-    def latest_release_name(self) -> str:
+    def latest_version_name(self) -> str:
         return "14"
 
     @property
@@ -276,7 +276,7 @@ class DotNet(StandAloneExeRequirement):
         pass
 
     @property
-    def latest_release_name(self) -> str:
+    def latest_version_name(self) -> str:
         return "6.0.X"
 
     @property

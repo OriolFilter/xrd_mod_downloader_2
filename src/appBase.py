@@ -1,3 +1,4 @@
+import asyncio
 import dataclasses
 import os.path
 import shutil
@@ -42,10 +43,11 @@ class AppStruct(ABC):
     def latest_release(self) -> GitRelease:
         raise NotImplementedError
         # TODO rename/re-figure it out
+        # TODO probably delete
 
     @property
     @abstractmethod
-    def latest_release_name(self) -> str:
+    def latest_version_name(self) -> str:
         pass
         # TODO rename/re-figure it out
 
@@ -59,11 +61,60 @@ class AppStruct(ABC):
         """
         return Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(self.app_name.replace("/", "_"))
 
+    # Update related
+
+    async def download_version(self, version: str) -> bool:
+        """# TODO IDK"""
+        match sys.platform:
+            case 'win32':
+                if self.is_installed and self.is_patched:
+                    for pid in psutil.process_iter():
+                        if pid.name() == "GuiltyGearXrd.exe":
+                            # Windows doesn't allow to overwrite/delete/edit an already open file.
+                            raise Exception("Can't update *patched* App because Xrd is running.")
+            case _:
+                pass
+
+        return await self._download_version(version)
+
+    @abstractmethod
+    async def _download_version(self, version: str) -> bool:
+        raise NotImplementedError
+
+    # @abstractmethod
+    async def update_app_to_latest(self):
+        """
+        1. Download the files
+        2. Launches at boot, execute patch
+        # TODO, differentiate "patch_boot" and "patch_exe" (?)
+        :return:
+        """
+        await asyncio.sleep(1)
+        if not self.download_version(self.latest_version_name):
+            raise Exception(f"Failed downloading the version {self.latest_version_name} for {self.app_name}.")
+        self.select_current_version()
+
+    # @abstractmethod
+    async def select_current_version(self, version: str):
+        """
+        Used to swap between the selected version.
+        If patched -> replace files
+        """
+
+        raise NotImplementedError
+
+    # @abstractmethod
+    async def set_current_version(self, version: str):
+        """# TODO IDK"""
+        pass
+
+    # States
     @property
     def is_patched(self) -> bool:
         # TODO rename
         raise NotImplementedError
 
+    # Misc
     def export_config_dict(self) -> {str: str | int | None | bool}:
         return {
             "tag_name": self.tag_name,
@@ -292,26 +343,12 @@ class InjectorApp(AppStruct, ABC):
     def up_to_date(self) -> bool:
         if self.tag_name \
                 and self.latest_release \
-                and self.tag_name == self.latest_release_name:
+                and self.tag_name == self.latest_version_name:
             return True
         return False
 
-    async def download_release(self, release: GitRelease) -> None:
-        """Download the mod/app files"""
-        match sys.platform:
-            case 'win32':
-                if self.is_installed and self.is_patched:
-                    for pid in psutil.process_iter():
-                        if pid.name() == "GuiltyGearXrd.exe":
-                            # Windows doesn't allow to overwrite/delete/edit an already open file.
-                            raise Exception("Can't update *patched* App because Xrd is running.")
-            case _:
-                pass
-
-        await self.__download_release(release=release)
-        # await asyncio.sleep(3)
-
-    async def __download_release(self, release: GitRelease) -> None:
+    async def _download_version(self, version_name: str) -> None:
+        release: GitRelease = ...  # TODO send curl, get version -> generate GitRelease object
         files_to_download: [GitReleaseAsset] = []
         assets_whitelist = self._get_assets_whitelist(release=release)
 
@@ -510,7 +547,7 @@ class GithubApp(AppStruct, ABC):
         return self.__latest_release_available
 
     @property
-    def latest_release_name(self) -> str:
+    def latest_version_name(self) -> str:
         if not self.__latest_release_available:
             self.__latest_release_available = self._config.github_client.get_repo(self.app_name).get_latest_release()
         return self.__latest_release_available.tag_name
@@ -525,10 +562,11 @@ class StandAloneExeRequirement(InjectorApp, ABC):
     Apps that require to run a .exe unrelated to mods and such.
     Ie, dotnet or visual redistributable
     """
+
     @property
     def tag_name(self) -> str:
         if self.is_installed:
-            return self.latest_release_name
+            return self.latest_version_name
         return ""
 
     @tag_name.setter
@@ -558,7 +596,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
     def is_patched(self) -> bool:
         return self.is_installed
 
-    async def download_release(self, release: object):
+    async def _download_version(self, release_name: str) -> bool:
         if len(self._download_file_url) < 1:
             raise Exception(
                 "App has '{}' no available to download.".format(
@@ -570,6 +608,8 @@ class StandAloneExeRequirement(InjectorApp, ABC):
             downloads_files_path.mkdir(parents=True)
 
         urllib.request.urlretrieve(self._download_file_url, downloads_files_path.joinpath(self._executable_name))
+        # TODO check if it did download and all that
+        return True
 
     @property
     def _required_files(self) -> [str]:
@@ -589,7 +629,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
 
     @property
     @abstractmethod
-    def latest_release_name(self) -> str:
+    def latest_version_name(self) -> str:
         """
         Return the desired target version.
         Required to determine the installation path.
@@ -606,7 +646,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         Change values
         """
         self.launch()
-        self.tag_name = self.latest_release_name
+        self.tag_name = self.latest_version_name
         return True
 
     @property
@@ -620,7 +660,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         """
         # TODO fix/remove installation step
         return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(
-            self.latest_release_name)
+            self.latest_version_name)
 
     def patch(self):
         # IDK if I should be passing the extra args but
