@@ -700,3 +700,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
     @abstractmethod
     def _is_installed(self) -> bool:
         pass
+
+
+class XrdBinaryPatcher(AppStruct, ABC):
+    pass
