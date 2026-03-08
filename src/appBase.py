@@ -113,20 +113,15 @@ class AppStruct(ABC):
         # raise Exception(f"Downloads result = {await downloads_result}")
         if not downloads_result:
             raise Exception(f"Failed downloading the version {latest_version} for {self.app_name}.")
-        self.select_current_version(latest_version)
+        self.set_current_version(latest_version)
 
     # @abstractmethod
-    def select_current_version(self, version: str):
+    def set_current_version(self, version: str):
         """
         Used to swap between the selected version.
         If patched -> replace files
         """
         self.tag_name = version
-
-    # @abstractmethod
-    async def set_current_version(self, version: str):
-        """# TODO IDK"""
-        pass
 
     # States
     @property
