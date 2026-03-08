@@ -38,7 +38,7 @@ class GenericGithubApp(InjectorApp, GithubApp):
     def _executable_name(self) -> str:
         return "placeholder.exe"
 
-    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+    def _get_assets_whitelist(self, tag: str) -> [str]:
         raise NotImplementedError("_download_app for app {}".format(self.__class__))
 
 
@@ -78,9 +78,9 @@ class WakeUpTool(InjectorApp, GithubApp):
     def _executable_name(self) -> str:
         return "GGXrdReversalTool.exe"
 
-    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
-        assets_whitelist = ["GGXrdReversalTool.{}.zip".format(release.tag_name),
-                            "GGXrdReversalTool-{}.zip".format(release.tag_name)]
+    def _get_assets_whitelist(self, tag: str) -> [str]:
+        assets_whitelist = ["GGXrdReversalTool.{}.zip".format(tag),
+                            "GGXrdReversalTool-{}.zip".format(tag)]
 
         return assets_whitelist
 
@@ -123,7 +123,7 @@ class ReplayTakeover(InjectorApp, GithubApp):
     def _executable_name(self) -> str:
         return "GGXrdReplayTakeoverInjector.exe"
 
-    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+    def _get_assets_whitelist(self, tag: str) -> [str]:
         assets_whitelist = ["GGXrdReplayTakeover.zip"]
         return assets_whitelist
 
@@ -198,7 +198,7 @@ class HitboxOverlay(InjectorApp, GithubApp):
             case _:
                 raise NotImplementedError
 
-    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+    def _get_assets_whitelist(self, tag: str) -> [str]:
         assets_whitelist = ["ggxrd_hitbox_overlay.zip"]
         return assets_whitelist
 

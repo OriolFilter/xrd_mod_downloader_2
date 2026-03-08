@@ -72,6 +72,11 @@ class AppStruct(ABC):
     def is_installed(self):
         pass
 
+    @property
+    @abstractmethod
+    def up_to_date(self) -> bool:
+        pass
+
     async def download_version(self, version: str) -> bool:
         """# TODO IDK"""
         match sys.platform:
@@ -99,20 +104,24 @@ class AppStruct(ABC):
         :return:
         """
         # await asyncio.sleep(1)
+        # loop = asyncio.get_event_loop()
+        # latest_version = loop.run_until_complete(self.get_latest_version_name())
+        # loop.close()
         latest_version = await self.get_latest_version_name()
-
-        if not self.download_version(latest_version):
-            raise Exception(f"Failed downloading the version {self.get_latest_version_name()} for {self.app_name}.")
-        await self.select_current_version(latest_version)
+        downloads_result = await self.download_version(latest_version)
+        # raise Exception(f"download result={downloads_result}")
+        # raise Exception(f"Downloads result = {await downloads_result}")
+        if not downloads_result:
+            raise Exception(f"Failed downloading the version {latest_version} for {self.app_name}.")
+        self.select_current_version(latest_version)
 
     # @abstractmethod
-    async def select_current_version(self, version: str):
+    def select_current_version(self, version: str):
         """
         Used to swap between the selected version.
         If patched -> replace files
         """
-
-        raise NotImplementedError
+        self.tag_name = version
 
     # @abstractmethod
     async def set_current_version(self, version: str):
@@ -353,25 +362,25 @@ class InjectorApp(AppStruct, ABC):
     @property
     def up_to_date(self) -> bool:
         if self.tag_name \
-                and self.tag_name == self.get_latest_version_name:
+                and self.tag_name == self.get_latest_version_name():
             # and self.latest_release \
             return True
         return False
 
-    async def _download_version(self, version_name: str) -> None:
-        release: GitRelease = ...  # TODO send curl, get version -> generate GitRelease object
+    async def _download_version(self, version_name: str) -> bool:
+        # raise NotImplementedError(f"_download_version {self.__class__}")
+        # release: GitRelease = ...  # TODO send curl, get version -> generate GitRelease object
+        release: GitRelease = self._config.github_client.get_repo(self.app_name).get_release(version_name)
         files_to_download: [GitReleaseAsset] = []
-        assets_whitelist = self._get_assets_whitelist(release=release)
+        assets_whitelist = self.get_assets_whitelist(tag=release.tag_name)
 
         new_release_files_path = Path(self._config.app_download_path).joinpath(
             self.app_name.replace("/", "_")).joinpath(release.tag_name)
-
-        release: GitRelease
         for asset in release.assets:
             asset: GitReleaseAsset
             if asset.name in assets_whitelist:
                 files_to_download.append(asset)
-        # raise Exception(f"{len(files_to_download) > 0}?")
+        # raise Exception(f"{files_to_download}?")
         if not any(files_to_download):
             raise Exception(
                 "No files matched the criteria to be Download."
@@ -398,12 +407,12 @@ class InjectorApp(AppStruct, ABC):
                 with ZipFile(f"{new_release_files_path}/{file.name}") as z:
                     z.extractall(path=new_release_files_path)
                     # TODO only extract desired files
+        return True
 
-    def get_assets_whitelist(self, release: GitRelease):
-        self.get_assets_whitelist(release=release)
+    def get_assets_whitelist(self, tag: str) -> [str]:
+        return self._get_assets_whitelist(tag)
 
-    @abstractmethod
-    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
+    def _get_assets_whitelist(self, tag: str) -> [str]:
         raise NotImplementedError("_download_app for app {}".format(self.__class__))
 
     def launch(self) -> None:
@@ -635,9 +644,6 @@ class StandAloneExeRequirement(InjectorApp, ABC):
     @property
     def _required_files(self) -> [str]:
         return [self._executable_name]
-
-    def _get_assets_whitelist(self, release: GitRelease) -> [str]:
-        raise NotImplementedError
 
     @property
     def latest_release(self) -> None:
