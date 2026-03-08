@@ -252,7 +252,7 @@ class ModManagerApp(App):
             # time.sleep(0.50)
             # latest_release = app.get_latest_release_available()
             # latest_release = "paco"
-            if app.tag_name and app.up_to_date:
+            if app.tag_name and await app.up_to_date:
                 tag_name_message = Text(app.tag_name, style="#32a852")
             else:
                 tag_name_message = Text(app.tag_name, style="#d8db23 bold")
