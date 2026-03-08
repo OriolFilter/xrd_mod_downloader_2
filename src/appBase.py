@@ -74,7 +74,7 @@ class AppStruct(ABC):
 
     @property
     @abstractmethod
-    def up_to_date(self) -> bool:
+    async def up_to_date(self) -> bool:
         pass
 
     async def download_version(self, version: str) -> bool:
@@ -360,9 +360,9 @@ class InjectorApp(AppStruct, ABC):
         return "{}.bat".format(self.app_name.replace('/', '_'))
 
     @property
-    def up_to_date(self) -> bool:
+    async def up_to_date(self) -> bool:
         if self.tag_name \
-                and self.tag_name == self.get_latest_version_name():
+                and self.tag_name == await self.get_latest_version_name():
             # and self.latest_release \
             return True
         return False
@@ -604,7 +604,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         pass
 
     @property
-    def up_to_date(self) -> bool:
+    async def up_to_date(self) -> bool:
         if self.is_installed:
             return True
         return False
