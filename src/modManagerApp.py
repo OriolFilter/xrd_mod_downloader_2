@@ -57,7 +57,7 @@ class ModManagerApp(App):
 
         super().__init__(*args, **kwargs)
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
 
         # self.table.zebra_stripes = True
         # self.cursor_type = "row"
@@ -78,8 +78,7 @@ class ModManagerApp(App):
                 label=mod.app_name,
             )
 
-        self.__update_set_values()
-        # self.table.show_cursor = False
+        await self.__update_set_values()
 
     # def action_search_updates_app(self):
     #     pass
@@ -158,7 +157,7 @@ class ModManagerApp(App):
 
         # Yield messages(?)
         self.notify(f"Mod {app.app_name} updated.")
-        self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "patched"])
+        await self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "patched"])
 
     @work(exclusive=True)
     async def __update_app_to_release_old(self):
@@ -173,7 +172,7 @@ class ModManagerApp(App):
         app = self.selected_app
         release = app.latest_release
         # TODO check if its already download, skipp download if exists
-        self.notify(f"Starting download.\nApp: {app.app_name}\nRelease: {app.latest_version_name}",
+        self.notify(f"Starting download.\nApp: {app.app_name}\nRelease: {await app.get_latest_version_name()}",
                     severity="warning")
         async with asyncio.TaskGroup() as tg:
             download = tg.create_task(app.download_release(release=release))
@@ -197,7 +196,7 @@ class ModManagerApp(App):
         self.notify(f"Mod {app.app_name} installed.")
 
         # self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
-        self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "patched"])
+        await self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "patched"])
 
     @work(exclusive=True)
     async def action_patch_mod(self):
@@ -234,9 +233,9 @@ class ModManagerApp(App):
 
         self.notify(f"Mod {app.app_name} patched.")
 
-        self.__update_set_values(rows=app.app_name, columns=["patched"])
+        await self.__update_set_values(rows=app.app_name, columns=["patched"])
 
-    def __update_set_values(self, columns: str | [str] = None, rows: str | [str] = None) -> None:
+    async def __update_set_values(self, columns: str | [str] = None, rows: str | [str] = None) -> None:
         if columns is str:
             columns = [columns]
         else:
@@ -257,10 +256,13 @@ class ModManagerApp(App):
                 tag_name_message = Text(app.tag_name, style="#32a852")
             else:
                 tag_name_message = Text(app.tag_name, style="#d8db23 bold")
+            # loop = asyncio.get_event_loop()
+            # latest_release = loop.run_until_complete(app.get_latest_version_name())
+            # loop.close()
             app_info = {
                 "app_name": app.app_name,
                 "tag_name": tag_name_message,
-                "latest_version_available": app.latest_version_name,
+                "latest_version_available": await app.get_latest_version_name(),
                 "installed": (NO, TRUE)[app.is_installed],
                 "patched": (NO, TRUE)[app.is_patched],
                 "description": app.description,

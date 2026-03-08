@@ -10,6 +10,7 @@ from pathlib import Path
 from subprocess import DEVNULL
 from zipfile import ZipFile
 
+import aiohttp
 import psutil
 from github import GitRelease
 from github.GitReleaseAsset import GitReleaseAsset
@@ -18,13 +19,16 @@ import functions
 from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
 
 
+# from async_property import async_property
+
 @dataclasses.dataclass
 class AppStruct(ABC):
     _config: object
     repo_owner: str
     repo_name: str
-    _tag_name: str | None = ""
     description: str = ""
+    _tag_name: str = ""
+    _latest_version_name: str = ""
 
     @property
     def tag_name(self) -> str:
@@ -38,16 +42,16 @@ class AppStruct(ABC):
     def app_name(self) -> str:
         return "{}/{}".format(self.repo_owner, self.repo_name)
 
-    @property
-    @abstractmethod
-    def latest_release(self) -> GitRelease:
-        raise NotImplementedError
-        # TODO rename/re-figure it out
-        # TODO probably delete
+    # TODO NUKE
+    # @property
+    # @abstractmethod
+    # def latest_release(self) -> GitRelease:
+    #     raise NotImplementedError
+    #     # TODO rename/re-figure it out
+    #     # TODO probably delete
 
-    @property
     @abstractmethod
-    def latest_version_name(self) -> str:
+    async def get_latest_version_name(self) -> str:
         pass
         # TODO rename/re-figure it out
 
@@ -62,6 +66,11 @@ class AppStruct(ABC):
         return Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(self.app_name.replace("/", "_"))
 
     # Update related
+
+    @property
+    @abstractmethod
+    def is_installed(self):
+        pass
 
     async def download_version(self, version: str) -> bool:
         """# TODO IDK"""
@@ -89,10 +98,12 @@ class AppStruct(ABC):
         # TODO, differentiate "patch_boot" and "patch_exe" (?)
         :return:
         """
-        await asyncio.sleep(1)
-        if not self.download_version(self.latest_version_name):
-            raise Exception(f"Failed downloading the version {self.latest_version_name} for {self.app_name}.")
-        self.select_current_version()
+        # await asyncio.sleep(1)
+        latest_version = await self.get_latest_version_name()
+
+        if not self.download_version(latest_version):
+            raise Exception(f"Failed downloading the version {self.get_latest_version_name()} for {self.app_name}.")
+        await self.select_current_version(latest_version)
 
     # @abstractmethod
     async def select_current_version(self, version: str):
@@ -342,8 +353,8 @@ class InjectorApp(AppStruct, ABC):
     @property
     def up_to_date(self) -> bool:
         if self.tag_name \
-                and self.latest_release \
-                and self.tag_name == self.latest_version_name:
+                and self.tag_name == self.get_latest_version_name:
+            # and self.latest_release \
             return True
         return False
 
@@ -532,7 +543,8 @@ class GithubApp(AppStruct, ABC):
     """
     Used by apps that use Github as their source.
     """
-    __latest_release_available: GitRelease = None
+
+    # __latest_release_available: GitRelease = None
 
     def get_repo_url(self) -> str:
         return "https://github.com/{}/{}".format(self.repo_owner, self.repo_name)
@@ -546,11 +558,20 @@ class GithubApp(AppStruct, ABC):
             self.__latest_release_available = self._config.github_client.get_repo(self.app_name).get_latest_release()
         return self.__latest_release_available
 
-    @property
-    def latest_version_name(self) -> str:
-        if not self.__latest_release_available:
-            self.__latest_release_available = self._config.github_client.get_repo(self.app_name).get_latest_release()
-        return self.__latest_release_available.tag_name
+    async def get_latest_version_name(self) -> str:
+        if not self._latest_version_name:
+            url = f"https://github.com/{self.repo_owner}/{self.repo_name}/releases/latest"
+            async with aiohttp.ClientSession() as session:
+                async with session.head(url) as resp:
+                    latest_url = resp.headers.get("Location")
+                    if resp.status and any(latest_url) and latest_url.startswith(
+                            f"https://github.com/{self.repo_owner}/{self.repo_name}/releases/tag/"):
+                        print("OK!")
+                        latest_tag = latest_url.removeprefix(
+                            f"https://github.com/{self.repo_owner}/{self.repo_name}/releases/tag/")
+                        if latest_tag:
+                            return latest_tag
+        return self._latest_version_name
 
     # def fetch_releases_available(self) -> None:
     #     cli = Github()
@@ -566,7 +587,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
     @property
     def tag_name(self) -> str:
         if self.is_installed:
-            return self.latest_version_name
+            return self.get_latest_version_name()
         return ""
 
     @tag_name.setter
@@ -596,7 +617,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
     def is_patched(self) -> bool:
         return self.is_installed
 
-    async def _download_version(self, release_name: str) -> bool:
+    async def _download_version(self, version_name: str) -> bool:
         if len(self._download_file_url) < 1:
             raise Exception(
                 "App has '{}' no available to download.".format(
@@ -627,9 +648,8 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         """
         return None
 
-    @property
     @abstractmethod
-    def latest_version_name(self) -> str:
+    async def get_latest_version_name(self) -> str:
         """
         Return the desired target version.
         Required to determine the installation path.
@@ -639,6 +659,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
 
     async def install_release(self, release: GitRelease) -> bool:
         """
+        # TODO nuke GitRelease
         Execute the .exe
 
         Wait for it to finish.
@@ -646,7 +667,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         Change values
         """
         self.launch()
-        self.tag_name = self.latest_version_name
+        self.tag_name = self.get_latest_version_name()
         return True
 
     @property
@@ -660,7 +681,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         """
         # TODO fix/remove installation step
         return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(
-            self.latest_version_name)
+            self.get_latest_version_name())
 
     def patch(self):
         # IDK if I should be passing the extra args but

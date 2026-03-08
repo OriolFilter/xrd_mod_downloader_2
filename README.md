@@ -25,6 +25,11 @@ Probs "goto" themes:
 - textual-dark
 - flexoki
 
+# Async stuff
+https://stackoverflow.com/a/40225614
+
+
+# Windows stuff
 
 Windows registry for steam
 
