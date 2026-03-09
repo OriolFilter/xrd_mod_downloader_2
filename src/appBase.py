@@ -133,14 +133,9 @@ class AppStruct(AppPublic, ABC):
     # Update related
 
     @property
-    @abstractmethod
-    def is_installed(self):
-        pass
-
-    @property
-    @abstractmethod
-    async def up_to_date(self) -> bool:
-        pass
+    def starts_at_boot(self) -> bool:
+        # TODO
+        return False
 
     async def download_version(self, version: str) -> bool:
         """# TODO IDK"""
@@ -420,7 +415,7 @@ class InjectorApp(AppStruct, ABC):
         return "{}.bat".format(self.app_name.replace('/', '_'))
 
     @property
-    async def up_to_date(self) -> bool:
+    async def is_up_to_date(self) -> bool:
         if self.tag_name \
                 and self.tag_name == await self.get_latest_version_name():
             # and self.latest_release \
@@ -665,7 +660,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         pass
 
     @property
-    async def up_to_date(self) -> bool:
+    async def is_up_to_date(self) -> bool:
         if self.is_installed:
             return True
         return False
