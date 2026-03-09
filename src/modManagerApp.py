@@ -48,7 +48,7 @@ class ModManagerApp(App):
         self.__column_fields = {
             # "app_name": "AppName",
             "installed": "Installed",
-            "patched": "Auto Start",
+            "starts_at_boot": "Auto Start",
             "tag_name": " Current ",
             "latest_version_available": " Latest ",  # Or Up to date
             # "up_to_date": "Up To Date",
@@ -156,46 +156,46 @@ class ModManagerApp(App):
 
         # Yield messages(?)
         self.notify(f"Mod {app.app_name} updated.")
-        await self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "patched"])
+        await self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "starts_at_boot"])
 
-    @work(exclusive=True)
-    async def __update_app_to_release_old(self):
-        """
-        Calls download and install methods from the app class.
-
-        If no release is given, it will update to latest.
-
-        Notify through the process.
-        :return:
-        """
-        app = self.selected_app
-        release = app.latest_release
-        # TODO check if its already download, skipp download if exists
-        self.notify(f"Starting download.\nApp: {app.app_name}\nRelease: {await app.get_latest_version_name()}",
-                    severity="warning")
-        async with asyncio.TaskGroup() as tg:
-            download = tg.create_task(app.download_release(release=release))
-
-        if not download.done():
-            # No clue under which circumstances this would occur but whatever
-            self.notify("Failed to download the mod!", severity="error")
-            return 0
-
-        # TODO Install step is useless. Remove
-        self.notify("Download completed.\nStarting install step.", severity="information")
-        async with asyncio.TaskGroup() as tg:
-            install = tg.create_task(app.install_release(release=release))
-
-        if not install.done():
-            # No clue under which circumstances this would occur but whatever
-            # TODO capture exceptions ?
-            self.notify(f"Failed to download mod {app.app_name}", severity="error")
-            return 0
-
-        self.notify(f"Mod {app.app_name} installed.")
-
-        # self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
-        await self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "patched"])
+    # @work(exclusive=True)
+    # async def __update_app_to_release_old(self):
+    #     """
+    #     Calls download and install methods from the app class.
+    #
+    #     If no release is given, it will update to latest.
+    #
+    #     Notify through the process.
+    #     :return:
+    #     """
+    #     app = self.selected_app
+    #     release = app.latest_release
+    #     # TODO check if its already download, skipp download if exists
+    #     self.notify(f"Starting download.\nApp: {app.app_name}\nRelease: {await app.get_latest_version_name()}",
+    #                 severity="warning")
+    #     async with asyncio.TaskGroup() as tg:
+    #         download = tg.create_task(app.download_release(release=release))
+    #
+    #     if not download.done():
+    #         # No clue under which circumstances this would occur but whatever
+    #         self.notify("Failed to download the mod!", severity="error")
+    #         return 0
+    #
+    #     # TODO Install step is useless. Remove
+    #     self.notify("Download completed.\nStarting install step.", severity="information")
+    #     async with asyncio.TaskGroup() as tg:
+    #         install = tg.create_task(app.install_release(release=release))
+    #
+    #     if not install.done():
+    #         # No clue under which circumstances this would occur but whatever
+    #         # TODO capture exceptions ?
+    #         self.notify(f"Failed to download mod {app.app_name}", severity="error")
+    #         return 0
+    #
+    #     self.notify(f"Mod {app.app_name} installed.")
+    #
+    #     # self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
+    #     await self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "patched"])
 
     @work(exclusive=True)
     async def action_patch_mod(self):
@@ -230,9 +230,9 @@ class ModManagerApp(App):
                 self.notify(f"Failed to unpatch mod {app.app_name}!", severity="error")
                 return 0
 
-        self.notify(f"Mod {app.app_name} patched.")
+        self.notify(f"Mod {app.app_name} now starts at boot.")
 
-        await self.__update_set_values(rows=app.app_name, columns=["patched"])
+        await self.__update_set_values(rows=app.app_name, columns=["starts_at_boot"])
 
     async def __update_set_values(self, columns: str | [str] = None, rows: str | [str] = None) -> None:
         if columns is str:
@@ -263,7 +263,7 @@ class ModManagerApp(App):
                 "tag_name": tag_name_message,
                 "latest_version_available": await app.get_latest_version_name(),
                 "installed": (NO, TRUE)[app.is_installed],
-                "patched": (NO, TRUE)[app.is_patched],
+                "starts_at_boot": (NO, TRUE)[app.starts_at_boot],
                 "description": app.description,
                 # "up_to_date": (NO, TRUE)[app.up_to_date]
             }
