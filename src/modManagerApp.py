@@ -8,7 +8,7 @@ from textual.widgets import DataTable, Footer
 
 from Config import GlobalConfig
 from exceptions import XrdNotRunning
-from appBase import AppStruct
+from appBase import AppPublic
 
 NO = Text("No", style="#a83a32 bold")
 FALSE = NO
@@ -37,7 +37,7 @@ class ModManagerApp(App):
 
     # { field/key: display_name }
     @property
-    def selected_app(self) -> AppStruct:
+    def selected_app(self) -> AppPublic:
         row_pos = self.table.coordinate_to_cell_key(self.table.cursor_coordinate)[0]
         # {'value': 'kkots/GGXrdBackgroundGamepad'}
         row_key = row_pos.value
@@ -71,7 +71,7 @@ class ModManagerApp(App):
 
         # Add rows
         for mod in self.config.mod_list:
-            mod: AppStruct
+            mod: AppPublic
             self.table.add_row(
                 *(),
                 key=mod.app_name,
@@ -85,11 +85,11 @@ class ModManagerApp(App):
 
     def action_launch_mod(self):
         app = self.selected_app
-        app: AppStruct
+        app: AppPublic
         if not app.is_installed:
             self.notify(f"App {app.app_name} is not installed.\nInstall before launching.",
                         severity="warning")
-        elif not app.can_be_launched():
+        elif not app.can_be_launched:
             # TODO check if dotnet is required/is installed
             self.notify(f"Can't launch app {app.app_name}.\nEnsure the app is installed.",
                         severity="error")
@@ -129,7 +129,6 @@ class ModManagerApp(App):
 
     async def action_update_app_to_latest(self):
         self.__update_app_to_release()
-
 
     @work(exclusive=True)
     async def __update_app_to_release(self):

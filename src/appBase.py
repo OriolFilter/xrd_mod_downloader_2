@@ -21,8 +21,72 @@ from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
 
 # from async_property import async_property
 
+class AppPublic(ABC):
+    """
+    This is an empty class that's only used to represent the methods available "externally"
+    """
+
+    @property
+    @abstractmethod
+    def app_name(self) -> str:
+        """
+        Return the name of the app.
+        Mostly to identify itself when displayed or with
+        :return:
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def starts_at_boot(self) -> bool:
+        """
+        Whether if mod/app is considered to start at Xrd boot.
+        :return: 
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def is_up_to_date(self) -> bool:
+        """
+        Whether if is considered to be up-to-date.
+        :return:
+        """
+
+    @property
+    @abstractmethod
+    def is_installed(self) -> bool:
+        """
+        Whether if is considered to be installed.
+        This mostly would mean if the files are downloaded to be launched locally.
+        Instances like the XrdBinaryPatcher or StandAloneExeRequirement will use a more loose meaning.
+        :return:
+        """
+
+    @property
+    @abstractmethod
+    def can_be_launched(self) -> bool:
+        """
+        Whether if the game/.exe can currently be launched.
+        # TODO probably will nuke this. Or refactor it.
+        """
+        pass
+
+    @abstractmethod
+    def update_app_to_latest(self):
+        """
+        Update the app to the latest version available.
+        :return:
+        """
+        pass
+
+
 @dataclasses.dataclass
-class AppStruct(ABC):
+class AppStruct(AppPublic, ABC):
+    """
+    Actual Skel/Base for the mods/apps.
+    """
+
     _config: object
     repo_owner: str
     repo_name: str
@@ -40,6 +104,7 @@ class AppStruct(ABC):
 
     @property
     def app_name(self) -> str:
+        # Move to GithubApp, move the owner=name etc from __init__ values to the class itself.
         return "{}/{}".format(self.repo_owner, self.repo_name)
 
     # TODO NUKE
@@ -515,6 +580,7 @@ class InjectorApp(AppStruct, ABC):
 
         return True
 
+    @property
     def can_be_launched(self) -> bool:
         return any(self._executable_name)
 
