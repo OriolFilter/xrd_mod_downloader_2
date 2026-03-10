@@ -235,7 +235,7 @@ class VsRedistributableBase(StandAloneExeRequirement, ABC):
     def _download_file_url(self) -> str:
         return f"https://aka.ms/vs/17/release/{self._executable_name}"
 
-    async def get_latest_version_name(self) -> str:
+    async def _get_latest_version_name(self) -> str:
         return "14"
 
     @property
@@ -274,7 +274,7 @@ class DotNet(StandAloneExeRequirement):
     def tag_name(self, tag_name: str):
         pass
 
-    async def get_latest_version_name(self) -> str:
+    async def _get_latest_version_name(self) -> str:
         return "6.0.X"
 
     @property

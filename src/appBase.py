@@ -47,7 +47,8 @@ class AppPublic(ABC):
 
     @property
     @abstractmethod
-    def is_up_to_date(self) -> bool:
+    async def is_up_to_date(self) -> bool:
+        # TODO remove async
         """
         Whether if is considered to be up-to-date.
         :return:
@@ -115,8 +116,18 @@ class AppStruct(AppPublic, ABC):
     #     # TODO rename/re-figure it out
     #     # TODO probably delete
 
-    @abstractmethod
     async def get_latest_version_name(self) -> str:
+        # TODO move to sync, probably, idk yet
+        return await self._get_latest_version_name()
+
+    @abstractmethod
+    async def _get_latest_version_name(self) -> str:
+        """
+        Return the desired target version.
+        Required to determine the installation path.
+        :return:
+        """
+
         pass
         # TODO rename/re-figure it out
 
@@ -317,6 +328,7 @@ class InjectorApp(AppStruct, ABC):
 
     def _patch(self):
         # TODO Move patching away/into a single bat file, instead of 10/per mod.
+        # TODO replace how it works
         """
         Create/overwrite the DelayApp.bat file.
         Append the start of the bat at the bottom of the BootGGXrd.bat script.
@@ -609,7 +621,7 @@ class GithubApp(AppStruct, ABC):
     Used by apps that use Github as their source.
     """
 
-    # __latest_release_available: GitRelease = None
+    __latest_release_available: GitRelease = None
 
     def get_repo_url(self) -> str:
         return "https://github.com/{}/{}".format(self.repo_owner, self.repo_name)
@@ -623,7 +635,7 @@ class GithubApp(AppStruct, ABC):
             self.__latest_release_available = self._config.github_client.get_repo(self.app_name).get_latest_release()
         return self.__latest_release_available
 
-    async def get_latest_version_name(self) -> str:
+    async def _get_latest_version_name(self) -> str:
         if not self._latest_version_name:
             url = f"https://github.com/{self.repo_owner}/{self.repo_name}/releases/latest"
             async with aiohttp.ClientSession() as session:
@@ -710,15 +722,6 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         """
         return None
 
-    @abstractmethod
-    async def get_latest_version_name(self) -> str:
-        """
-        Return the desired target version.
-        Required to determine the installation path.
-        :return:
-        """
-        raise NotImplementedError
-
     async def install_release(self, release: GitRelease) -> bool:
         """
         # TODO nuke GitRelease
@@ -729,7 +732,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         Change values
         """
         self.launch()
-        self.tag_name = self.get_latest_version_name()
+        self.tag_name = await self.get_latest_version_name()
         return True
 
     @property
@@ -743,7 +746,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         """
         # TODO fix/remove installation step
         return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(
-            self.get_latest_version_name())
+            asyncio.run(self.get_latest_version_name()))
 
     def patch(self):
         # IDK if I should be passing the extra args but
