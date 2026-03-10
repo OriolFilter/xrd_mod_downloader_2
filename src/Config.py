@@ -6,8 +6,8 @@ from pathlib import Path
 import psutil
 from github import Github
 
-from modClasses import AppStruct, WakeUpTool, HitboxOverlay, ReplayTakeover, VsRedistributable64, VsRedistributable86, \
-    DotNet
+from appBase import AppStruct
+from appExpanded import *
 from exceptions import XrdFolderNotValid, XrdFolderNotFound
 
 
@@ -23,12 +23,12 @@ class GlobalConfig:
     def __init__(self):
         mod_list = [
             DotNet(repo_owner="Microsoft", repo_name=".Net 6", _config=self,
-                        description="Required to launch the Reversal Tool"),
+                   description="Required to launch the Reversal Tool"),
             # HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
             #                repo_owner="kkots",
             #                description="Hitbox/framedata viewer mod",
             #                _config=self),
-            WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
+            # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
             # ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self),
             # #Iquis would need to verify download differenlty
@@ -123,7 +123,7 @@ class GlobalConfig:
         config_dict: {str: str | {str: str}} = {}
         mods_dict: {str: {str: str}} = {}
 
-        # fields_to_export: [str] = ["_tag_name","url_source_release"]
+        # fields_to_export: [str] = ["_tag_name"]
 
         # Export mods info
         for key, app in self.mod_dict.items():

@@ -8,7 +8,7 @@ from textual.widgets import DataTable, Footer
 
 from Config import GlobalConfig
 from exceptions import XrdNotRunning
-from modClasses import AppStruct
+from appBase import AppPublic
 
 NO = Text("No", style="#a83a32 bold")
 FALSE = NO
@@ -37,7 +37,7 @@ class ModManagerApp(App):
 
     # { field/key: display_name }
     @property
-    def selected_app(self) -> AppStruct:
+    def selected_app(self) -> AppPublic:
         row_pos = self.table.coordinate_to_cell_key(self.table.cursor_coordinate)[0]
         # {'value': 'kkots/GGXrdBackgroundGamepad'}
         row_key = row_pos.value
@@ -48,7 +48,7 @@ class ModManagerApp(App):
         self.__column_fields = {
             # "app_name": "AppName",
             "installed": "Installed",
-            "patched": "Auto Start",
+            "starts_at_boot": "Auto Start",
             "tag_name": " Current ",
             "latest_version_available": " Latest ",  # Or Up to date
             # "up_to_date": "Up To Date",
@@ -57,7 +57,7 @@ class ModManagerApp(App):
 
         super().__init__(*args, **kwargs)
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
 
         # self.table.zebra_stripes = True
         # self.cursor_type = "row"
@@ -71,26 +71,25 @@ class ModManagerApp(App):
 
         # Add rows
         for mod in self.config.mod_list:
-            mod: AppStruct
+            mod: AppPublic
             self.table.add_row(
                 *(),
                 key=mod.app_name,
                 label=mod.app_name,
             )
 
-        self.__update_set_values()
-        # self.table.show_cursor = False
+        await self.__update_set_values()
 
     # def action_search_updates_app(self):
     #     pass
 
     def action_launch_mod(self):
         app = self.selected_app
-        app: AppStruct
+        app: AppPublic
         if not app.is_installed:
             self.notify(f"App {app.app_name} is not installed.\nInstall before launching.",
                         severity="warning")
-        elif not app.can_be_launched():
+        elif not app.can_be_launched:
             # TODO check if dotnet is required/is installed
             self.notify(f"Can't launch app {app.app_name}.\nEnsure the app is installed.",
                         severity="error")
@@ -132,7 +131,7 @@ class ModManagerApp(App):
         self.__update_app_to_release()
 
     @work(exclusive=True)
-    async def __update_app_to_release(self, release: GitRelease = None):
+    async def __update_app_to_release(self):
         """
         Calls download and install methods from the app class.
 
@@ -142,34 +141,22 @@ class ModManagerApp(App):
         :return:
         """
         app = self.selected_app
-        if release is None:
-            release = app.latest_release
         # TODO check if its already download, skipp download if exists
-        self.notify(f"Starting download.\nApp: {app.app_name}\nRelease: {app.latest_release_name}",
+        # self.notify(f"Starting update.\nApp: {app.app_name}\nRelease: {app.latest_release_name}",
+        self.notify(f"Starting update.\nApp: {app.app_name}.",
                     severity="warning")
         async with asyncio.TaskGroup() as tg:
-            download = tg.create_task(app.download_release(release=release))
+            update = tg.create_task(app.update_app_to_latest())
 
-        if not download.done():
+        if not update.done():
+            # TODO handle errors!
             # No clue under which circumstances this would occur but whatever
-            self.notify("Failed to download the mod!", severity="error")
+            self.notify(f"Failed to update {app.app_name}", severity="error")
             return 0
 
-        # TODO Install step is useless. Remove
-        self.notify("Download completed.\nStarting install step.", severity="information")
-        async with asyncio.TaskGroup() as tg:
-            install = tg.create_task(app.install_release(release=release))
-
-        if not install.done():
-            # No clue under which circumstances this would occur but whatever
-            # TODO capture exceptions ?
-            self.notify(f"Failed to download mod {app.app_name}", severity="error")
-            return 0
-
-        self.notify(f"Mod {app.app_name} installed.")
-
-        # self.__update_set_values(rows=app.app_name, columns=["tag_name", "up_to_date", "installed", "patched"])
-        self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "patched"])
+        # Yield messages(?)
+        self.notify(f"Mod {app.app_name} updated.")
+        await self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "starts_at_boot"])
 
     @work(exclusive=True)
     async def action_patch_mod(self):
@@ -204,11 +191,11 @@ class ModManagerApp(App):
                 self.notify(f"Failed to unpatch mod {app.app_name}!", severity="error")
                 return 0
 
-        self.notify(f"Mod {app.app_name} patched.")
+        self.notify(f"Mod {app.app_name} now starts at boot.")
 
-        self.__update_set_values(rows=app.app_name, columns=["patched"])
+        await self.__update_set_values(rows=app.app_name, columns=["starts_at_boot"])
 
-    def __update_set_values(self, columns: str | [str] = None, rows: str | [str] = None) -> None:
+    async def __update_set_values(self, columns: str | [str] = None, rows: str | [str] = None) -> None:
         if columns is str:
             columns = [columns]
         else:
@@ -225,16 +212,19 @@ class ModManagerApp(App):
             # time.sleep(0.50)
             # latest_release = app.get_latest_release_available()
             # latest_release = "paco"
-            if app.tag_name and app.up_to_date:
+            if app.tag_name and app.is_up_to_date:
                 tag_name_message = Text(app.tag_name, style="#32a852")
             else:
                 tag_name_message = Text(app.tag_name, style="#d8db23 bold")
+            # loop = asyncio.get_event_loop()
+            # latest_release = loop.run_until_complete(app.get_latest_version_name())
+            # loop.close()
             app_info = {
                 "app_name": app.app_name,
                 "tag_name": tag_name_message,
-                "latest_version_available": app.latest_release_name,
+                "latest_version_available": await app.get_latest_version_name(),
                 "installed": (NO, TRUE)[app.is_installed],
-                "patched": (NO, TRUE)[app.is_patched],
+                "starts_at_boot": (NO, TRUE)[app.starts_at_boot],
                 "description": app.description,
                 # "up_to_date": (NO, TRUE)[app.up_to_date]
             }
