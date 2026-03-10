@@ -47,8 +47,7 @@ class AppPublic(ABC):
 
     @property
     @abstractmethod
-    async def is_up_to_date(self) -> bool:
-        # TODO remove async
+    def is_up_to_date(self) -> bool:
         """
         Whether if is considered to be up-to-date.
 
@@ -429,9 +428,9 @@ class InjectorApp(AppStruct, ABC):
         return "{}.bat".format(self.app_name.replace('/', '_'))
 
     @property
-    async def is_up_to_date(self) -> bool:
+    def is_up_to_date(self) -> bool:
         if self.tag_name \
-                and self.tag_name == await self.get_latest_version_name():
+                and self.tag_name == asyncio.run(self.get_latest_version_name()):
             # and self.latest_release \
             return True
         return False
@@ -674,7 +673,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         pass
 
     @property
-    async def is_up_to_date(self) -> bool:
+    def is_up_to_date(self) -> bool:
         if self.is_installed:
             return True
         return False
