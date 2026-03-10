@@ -51,6 +51,8 @@ class AppPublic(ABC):
         # TODO remove async
         """
         Whether if is considered to be up-to-date.
+
+        Meaning if "current version" == "latest stable released"
         :return:
         """
 
