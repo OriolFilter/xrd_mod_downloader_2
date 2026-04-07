@@ -737,15 +737,13 @@ class StandAloneExeRequirement(InjectorApp, ABC):
     @property
     def current_version_files_path(self) -> Path:
         """
-        Since the installation step includes setting the self.name_tag, it's using the latest_release_name to determine
-        the download destination.
+        Download installation for Standalone Requirements is the raw folder, rn doesn't seem an issue to overwrite the older files.
 
         self.latest_release_name is hardcoded.
         :return:
         """
 
-        return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(
-            asyncio.run(self.get_latest_version_name()))
+        return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_"))
 
     def patch(self):
         # IDK if I should be passing the extra args but
