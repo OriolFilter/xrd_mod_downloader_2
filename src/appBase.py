@@ -743,7 +743,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         self.latest_release_name is hardcoded.
         :return:
         """
-        # TODO fix/remove installation step
+
         return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(
             asyncio.run(self.get_latest_version_name()))
 
