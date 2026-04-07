@@ -110,7 +110,7 @@ class ModManagerApp(App):
                                cursor_foreground_priority="renderable",
                                # cursor_background_priority="renderable"
                                )
-        self.table.styles.min_height = 10
+        self.table.styles.min_height = 15
         yield Footer()
 
         yield self.table
@@ -128,9 +128,9 @@ class ModManagerApp(App):
     #         raise e
 
     async def action_update_app_to_latest(self):
-        self.__update_app_to_release()
+        await self.__update_app_to_release()
 
-    @work(exclusive=True)
+    # @work(exclusive=True)
     async def __update_app_to_release(self):
         """
         Calls download and install methods from the app class.
@@ -158,7 +158,6 @@ class ModManagerApp(App):
         self.notify(f"Mod {app.app_name} updated.")
         await self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "starts_at_boot"])
 
-    @work(exclusive=True)
     async def action_patch_mod(self):
         app = self.selected_app
         # if app.is_patched():
@@ -166,7 +165,7 @@ class ModManagerApp(App):
         if not app.is_installed:
             self.notify(f"Can't patch.\nApp not installed: {app.app_name}",
                         severity="warning")
-        elif not app.is_patched:
+        elif not app.starts_at_boot:
             self.notify(f"Patching App: {app.app_name}",
                         severity="warning")
 

@@ -134,7 +134,7 @@ class HitboxOverlay(InjectorApp, GithubApp):
         return "ggxrd_hitbox_overlay.dll"
 
     @property
-    def _custom_is_patched(self) -> bool:
+    def _is_binary_patched(self) -> bool:
         """
         Code from kkots.
         """
@@ -148,7 +148,7 @@ class HitboxOverlay(InjectorApp, GithubApp):
                 return False
         return True
 
-    def _custom_unpatch(self):
+    def _unpatch_binary(self):
         # TODO
         # Prevent unpatch if version is less than 15
         # Windows doesn't allow to write a file if it's already open.

@@ -38,15 +38,6 @@ class AppPublic(ABC):
 
     @property
     @abstractmethod
-    def starts_at_boot(self) -> bool:
-        """
-        Whether if mod/app is considered to start at Xrd boot.
-        :return: 
-        """
-        pass
-
-    @property
-    @abstractmethod
     async def is_up_to_date(self) -> bool:
         """
         Whether if is considered to be up-to-date.
@@ -82,6 +73,11 @@ class AppPublic(ABC):
         Update the app to the latest version available.
         :return:
         """
+        pass
+
+    @property
+    @abstractmethod
+    def starts_at_boot(self) -> bool:
         pass
 
 
@@ -144,18 +140,11 @@ class AppStruct(AppPublic, ABC):
         """
         return Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(self.app_name.replace("/", "_"))
 
-    # Update related
-
-    @property
-    def starts_at_boot(self) -> bool:
-        # TODO
-        return False
-
     async def download_version(self, version: str) -> bool:
         """# TODO IDK"""
         match sys.platform:
             case 'win32':
-                if self.is_installed and self.is_patched:
+                if self.is_installed and self.starts_at_boot:
                     for pid in psutil.process_iter():
                         if pid.name() == "GuiltyGearXrd.exe":
                             # Windows doesn't allow to overwrite/delete/edit an already open file.
@@ -199,15 +188,34 @@ class AppStruct(AppPublic, ABC):
 
     # States
     @property
-    def is_patched(self) -> bool:
-        # TODO rename
+    @abstractmethod
+    def starts_at_boot(self) -> bool:
         raise NotImplementedError
+
+    @property
+    def _is_binary_patched(self) -> bool:
+        """
+        Returns False.
+
+        Can be used/implemented to detect if the GuiltyGear.exe or something similar has been patched
+        Like with the hitbox viewer.
+
+        :return:
+        """
+        return False
 
     # Misc
     def export_config_dict(self) -> {str: str | int | None | bool}:
         return {
             "tag_name": self.tag_name,
         }
+
+    def _unpatch_binary(self):
+        """
+        Can be used/implemented to unpatch the .exe or doing whatever.
+        Like with the hitbox viewer.
+        """
+        pass
 
     @property
     def current_version_files_path(self) -> Path:
@@ -234,37 +242,25 @@ class InjectorApp(AppStruct, ABC):
         return False
 
     @property
-    def is_patched(self) -> bool:
+    def starts_at_boot(self) -> bool:
+        # @property
+        # @abstractmethod
+        # def starts_at_boot(self) -> bool:
         """
-        Checking for xrd_path is to see if it's populated/found the xrd path.
+        Whether if mod/app is considered to start at Xrd boot.
 
-        Otherwise, there is no reason to.
+        Types:
+        - .exe binary is patched (literal sense of the word)
+        - mod starts with xrd at boot through the BootXrd.bat file
+
+        If xrd_path is not populated/found forces a False.
 
         Condition is (if autostart.bat patched or .exe patched) return true/false.
-
         :return:
         """
+
         return any(self._config.xrd_path) and (
-                (self._bat_file_enabled and self._patch_files_exists) or self._custom_is_patched)
-
-    @property
-    def _custom_is_patched(self) -> bool:
-        """
-        Returns False.
-
-        Can be used/implemented to detect if the GuiltyGear.exe or something similar has been patched
-        Like with the hitbox viewer.
-
-        :return:
-        """
-        return False
-
-    def _custom_unpatch(self):
-        """
-        Can be used/implemented to unpatch the .exe or doing whatever.
-        Like with the hitbox viewer.
-        """
-        pass
+                (self._bat_file_enabled and self._patch_files_exists) or self._is_binary_patched)
 
     @property
     def _patch_files_exists(self) -> bool:
@@ -299,8 +295,8 @@ class InjectorApp(AppStruct, ABC):
 
     async def disable_patch(self):
         """Toggle start on boot for the mod"""
-        if self._custom_is_patched:
-            self._custom_unpatch()
+        if self._is_binary_patched:
+            self._unpatch_binary()
 
         self._disable_patch()
 
@@ -409,9 +405,9 @@ class InjectorApp(AppStruct, ABC):
         # TODO refactor, this should be specific to github Struct
 
         self.tag_name = release.tag_name
-        if self.is_patched:
-            if self._custom_is_patched:
-                self._custom_unpatch()
+        if self.starts_at_boot:
+            if self._is_binary_patched:
+                self._unpatch_binary()
             await self.patch()
         return True
 
@@ -632,11 +628,11 @@ class GithubApp(AppStruct, ABC):
     def get_api_repo_url(self) -> str:
         return "https://api.github.com/repos/{}/{}".format(self.repo_owner, self.repo_name)
 
-    @property
-    def latest_release(self) -> GitRelease:
-        if not self.__latest_release_available:
-            self.__latest_release_available = self._config.github_client.get_repo(self.app_name).get_latest_release()
-        return self.__latest_release_available
+    # @property
+    # def latest_release(self) -> GitRelease:
+    #     if not self.__latest_release_available:
+    #         self.__latest_release_available = self._config.github_client.get_repo(self.app_name).get_latest_release()
+    #     return self.__latest_release_available
 
     async def _get_latest_version_name(self) -> str:
         if not self._latest_version_name:
@@ -694,7 +690,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         return ""
 
     @property
-    def is_patched(self) -> bool:
+    def starts_at_boot(self) -> bool:
         return self.is_installed
 
     async def _download_version(self, version_name: str) -> bool:
@@ -716,14 +712,14 @@ class StandAloneExeRequirement(InjectorApp, ABC):
     def _required_files(self) -> [str]:
         return [self._executable_name]
 
-    @property
-    def latest_release(self) -> None:
-        """
-        Set to return none for compatibility reasons.
-        Don't use.
-        :return:
-        """
-        return None
+    # @property
+    # def latest_release(self) -> None:
+    #     """
+    #     Set to return none for compatibility reasons.
+    #     Don't use.
+    #     :return:
+    #     """
+    #     return None
 
     async def install_release(self, release: GitRelease) -> bool:
         """
