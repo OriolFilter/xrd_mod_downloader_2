@@ -90,6 +90,7 @@ class AppStruct(AppPublic, ABC):
     """
 
     _config: object
+    # TODO rename to owner and name (?)
     repo_owner: str
     repo_name: str
     description: str = ""
