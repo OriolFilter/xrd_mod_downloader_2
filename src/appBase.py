@@ -47,11 +47,13 @@ class AppPublic(ABC):
 
     @property
     @abstractmethod
-    def is_up_to_date(self) -> bool:
+    async def is_up_to_date(self) -> bool:
         """
         Whether if is considered to be up-to-date.
 
         Meaning if "current version" == "latest stable released"
+
+        Couldn't manage to make it sync while keeping some async logic.
         :return:
         """
 
@@ -119,7 +121,6 @@ class AppStruct(AppPublic, ABC):
     #     # TODO probably delete
 
     async def get_latest_version_name(self) -> str:
-        # TODO move to sync, probably, idk yet
         return await self._get_latest_version_name()
 
     @abstractmethod
@@ -429,9 +430,9 @@ class InjectorApp(AppStruct, ABC):
         return "{}.bat".format(self.app_name.replace('/', '_'))
 
     @property
-    def is_up_to_date(self) -> bool:
+    async def is_up_to_date(self) -> bool:
         if self.tag_name \
-                and self.tag_name == asyncio.run(self.get_latest_version_name()):
+                and self.tag_name == await self.get_latest_version_name():
             # and self.latest_release \
             return True
         return False
@@ -674,7 +675,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         pass
 
     @property
-    def is_up_to_date(self) -> bool:
+    async def is_up_to_date(self) -> bool:
         if self.is_installed:
             return True
         return False
@@ -770,3 +771,10 @@ class StandAloneExeRequirement(InjectorApp, ABC):
 
 class XrdBinaryPatcher(AppStruct, ABC):
     pass
+    # @abstractmethod
+    # async def _get_latest_version_name(self) -> str:
+    #     """
+    #     Return the desired target version.
+    #     Required to determine the installation path.
+    #     :return:
+    #     """

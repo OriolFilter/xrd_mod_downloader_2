@@ -25,12 +25,12 @@ class ModManagerApp(App):
     __column_fields: {str: str} = None
 
     BINDINGS = [
-        Binding("u", "_update_app_to_latest", "update_to_latest", show=True),
+        Binding("u", "update_app_to_latest", "update_to_latest", show=True),
         # Binding("p", "patch_app", "patch", show=True, priority=True),
         # Binding("i", "search_updates", "search_updates", show=True, priority=True), # Checks on boot
-        Binding("s", "_save_config", "save", show=True),
-        Binding("l", "_launch_mod", "launch", show=True),
-        Binding("p", "_patch_mod", "patch", show=True),
+        Binding("s", "save_config", "save", show=True),
+        Binding("l", "launch_mod", "launch", show=True),
+        Binding("p", "patch_mod", "patch", show=True),
         # Binding("f", "download_latest", "download_latest", show=True, priority=True),
         # Binding("c", "change_version", "change_version", show=True, priority=True),
     ]
@@ -212,7 +212,7 @@ class ModManagerApp(App):
             # time.sleep(0.50)
             # latest_release = app.get_latest_release_available()
             # latest_release = "paco"
-            if app.tag_name and app.is_up_to_date:
+            if app.tag_name and await app.is_up_to_date:
                 tag_name_message = Text(app.tag_name, style="#32a852")
             else:
                 tag_name_message = Text(app.tag_name, style="#d8db23 bold")
