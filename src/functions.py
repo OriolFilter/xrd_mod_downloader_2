@@ -316,13 +316,13 @@ def get_dotnet_x86_version_windows() -> str:
     hkey = winreg.HKEY_LOCAL_MACHINE
     try:
         with winreg.OpenKeyEx(key=hkey,
-                              sub_key=r"SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x86\hostfxr") as reg:
+                              sub_key=r"SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x86\sharedfx\Microsoft.WindowsDesktop.App") as reg:
             n_index = winreg.QueryInfoKey(reg)[1]
             for i in range(0, n_index):
                 query = winreg.EnumValue(reg, i)
-                if query[0] == "Version" and any(query[1]):
+                if query[0].startswith("6.0.") and query[1]==1:
                     # print("Installed")
-                    return query[1]
+                    return query[0]
     except FileNotFoundError as e:
         # Key not found, thus shouldn't be installed.
         pass
@@ -338,13 +338,13 @@ def get_dotnet_x64_version_windows() -> str:
     hkey = winreg.HKEY_LOCAL_MACHINE
     try:
         with winreg.OpenKeyEx(key=hkey,
-                              sub_key=r"SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x64\hostfxr") as reg:
+                              sub_key=r"SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App") as reg:
             n_index = winreg.QueryInfoKey(reg)[1]
             for i in range(0, n_index):
                 query = winreg.EnumValue(reg, i)
-                if query[0] == "Version" and any(query[1]):
+                if query[0].startswith("6.0.") and query[1]==1:
                     # print("Installed")
-                    return query[1]
+                    return query[0]
     except FileNotFoundError as e:
         # Key not found, thus shouldn't be installed.
         pass
