@@ -510,14 +510,22 @@ class InjectorApp(AppStruct, ABC):
         match sys.platform:
             case 'linux':
                 envs = xrd_process.environ()
-                wineloader = envs.get("WINELOADER")
+                if envs.get("WINELOADER"):
+                    wineloader = envs.get("WINELOADER")
+                else:
+                    # From Proton10 and onwards WINELOADER no longer shows up for XRD
+                    paths = envs.get("PATH")
+                    wineloader = Path(paths.split(':')[0]).joinpath('wine').__str__()
 
-                if not wineloader:
+                if wineloader:
+                    if not Path(wineloader).exists():
+                        raise Exception(f"Wineloader path doesn't exist.\nPath='{wineloader}'.")
+                else:
                     raise WineLoaderNotFound(xrd_pid=xrd_process.pid)
 
                 wineprefix = envs.get("WINEPREFIX")
                 if not wineprefix:
-                    raise WinePrefixNotFound
+                    raise WinePrefixNotFound(xrd_pid=xrd_process.pid)
 
                 envs = {
                     "WINEFSYNC": "1",

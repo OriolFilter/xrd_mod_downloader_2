@@ -18,6 +18,9 @@ class WinePrefixNotFound(Exception):
     Raised when the value/path for WinePrefix couldn't be found (env WINEPREFIX)
     """
 
+    def __init__(self, xrd_pid: int):
+        super().__init__(f"WinePrefix environ variable couldn't be located (WINEPREFIX).\nXrd Pid: '{xrd_pid}'.")
+
 
 class XrdFolderNotFound(Exception):
     """
