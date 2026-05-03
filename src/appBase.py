@@ -494,6 +494,8 @@ class InjectorApp(AppStruct, ABC):
         Uses the respective wine file as an executable and passes the .exe as an argument.
         """
 
+        # raise Exception("A")
+
         if extra_args is None:
             extra_args = []
 
@@ -638,7 +640,7 @@ class GithubApp(AppStruct, ABC):
         if not self._latest_version_name:
             url = f"https://github.com/{self.repo_owner}/{self.repo_name}/releases/latest"
             async with aiohttp.ClientSession() as session:
-                async with session.head(url) as resp:
+                async with session.head(url, timeout=5) as resp:
                     latest_url = resp.headers.get("Location")
                     if resp.status and any(latest_url) and latest_url.startswith(
                             f"https://github.com/{self.repo_owner}/{self.repo_name}/releases/tag/"):

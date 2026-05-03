@@ -101,7 +101,8 @@ class ModManagerApp(App):
                 self.notify(f"Can't launch app {app.app_name}.\nXrdApp is not running.",
                             severity="error")
             except Exception as e:
-                self.notify(f"Can't launch app {app.app_name}.\nError: {e}.",
+                e: Exception
+                self.notify(f"Can't launch app {app.app_name}.\nType: {e.__class__}.\nMessage: {e.__str__()}.",
                             severity="error")
 
     def compose(self) -> ComposeResult:
