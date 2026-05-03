@@ -568,7 +568,9 @@ class InjectorApp(AppStruct, ABC):
         # ps -aux | grep '<defunct>'
         # $USER    105574  ... [start.exe] <defunct>
         # case 'linux':
-        process.wait()
+        # process.wait()
+
+        # UPDATE, Commented cause seems to not finish the process to it gets "hangs in there"
 
     @property
     def _launch_extra_args(self) -> [str]:
