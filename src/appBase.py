@@ -494,8 +494,6 @@ class InjectorApp(AppStruct, ABC):
         Uses the respective wine file as an executable and passes the .exe as an argument.
         """
 
-        # raise Exception("A")
-
         if extra_args is None:
             extra_args = []
 
@@ -515,7 +513,7 @@ class InjectorApp(AppStruct, ABC):
                 wineloader = envs.get("WINELOADER")
 
                 if not wineloader:
-                    raise WineLoaderNotFound
+                    raise WineLoaderNotFound(xrd_pid=xrd_process.pid)
 
                 wineprefix = envs.get("WINEPREFIX")
                 if not wineprefix:

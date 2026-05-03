@@ -102,7 +102,7 @@ class ModManagerApp(App):
                             severity="error")
             except Exception as e:
                 e: Exception
-                self.notify(f"Can't launch app {app.app_name}.\nType: {e.__class__}.\nMessage: {e.__str__()}.",
+                self.notify(f"Can't launch app {app.app_name}.\nType: '{e.__class__}'.\nMessage: {e.__str__()}",
                             severity="error")
 
     def compose(self) -> ComposeResult:
