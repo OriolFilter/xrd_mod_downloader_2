@@ -294,7 +294,7 @@ class InjectorApp(AppStruct, ABC):
     async def patch(self):
         self._patch()
 
-    async def disable_patch(self):
+    async def toggle_patch(self):
         """Toggle start on boot for the mod"""
         if self._is_binary_patched:
             self._unpatch_binary()
@@ -827,6 +827,16 @@ class XrdBinaryPatcher(AppStruct, abc.ABC):
         return self.tag_name
 
     async def patch(self):
+        # Windows doesn't allow to write a file if it's already open.
+        # So... on Windows raise an error if Xrd is open.
+        if sys.platform == 'win32':
+            for pid in psutil.process_iter():
+                if pid.name() == "GuiltyGearXrd.exe":
+                    raise Exception(f"Cannot unpatch '{self.app_name}' if Xrd is running.\n"
+                                    "Please close Xrd before using.")
+
+        if self._is_binary_patched():
+            raise Exception(f"{XrdBinaryPatcher.__class__} is already patched. Skipping...")
         self._patch()
 
     @property

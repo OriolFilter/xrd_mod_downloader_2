@@ -369,11 +369,32 @@ class DotNet(StandAloneExeRequirement):
 
 class GGXrdBackgroundGamepad(XrdBinaryPatcher):
     def _disable_patch(self):
-        pass
+        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        with open(xrd_exe_path, "rb") as file:
+            file.seek(0x947762)
+            file.write(b'\x0f\x84\x0d\x12\x00\x00')
+            file.seek(0x9477f2 + 1)
+            file.write(b'\x06')
+            file.seek(0xc1dce7 + 12)
+            file.write(b'\x06')
+            file.seek(0x94c008 + 9)
+            file.write(b'\x06')
 
     def _is_binary_patched(self) -> bool:
-        return False
+        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        with open(xrd_exe_path, "rb") as file:
+            file.seek(0x947762)
+            is_patched = (file.read(6) == b'\x90\x90\x90\x90\x90\x90')
+        return is_patched
 
     def _patch(self):
-        pass
-
+        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        with open(xrd_exe_path, "r+b") as file:
+            file.seek(0x947762)
+            file.write(b'\x90\x90\x90\x90\x90\x90')
+            file.seek(0x9477f2 + 1)
+            file.write(b'\x0e')
+            file.seek(0xc1dce7 + 12)
+            file.write(b'\x0e')
+            file.seek(0x94c008 + 9)
+            file.write(b'\x0e')
