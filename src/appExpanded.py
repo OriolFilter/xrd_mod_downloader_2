@@ -15,7 +15,7 @@ from github.GitReleaseAsset import GitReleaseAsset
 
 import functions
 from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
-from appBase import InjectorApp, StandAloneExeRequirement, GithubApp
+from appBase import InjectorApp, StandAloneExeRequirement, GithubApp, XrdBinaryPatcher
 
 
 # from Config import GlobalConfig
@@ -365,3 +365,15 @@ class DotNet(StandAloneExeRequirement):
                 else:
                     return functions.get_dotnet_x86_version_windows()
         return ""
+
+
+class GGXrdBackgroundGamepad(XrdBinaryPatcher):
+    def _disable_patch(self):
+        pass
+
+    def _is_binary_patched(self) -> bool:
+        return False
+
+    def _patch(self):
+        pass
+

@@ -24,12 +24,15 @@ class GlobalConfig:
         mod_list = [
             DotNet(repo_owner="Microsoft", repo_name=".Net 6", _config=self,
                    description="Required to launch the Reversal Tool"),
-            HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
-                           repo_owner="kkots",
-                           description="Hitbox/framedata viewer mod",
-                           _config=self),
-            WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
-            ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
+            # HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
+            #                repo_owner="kkots",
+            #                description="Hitbox/framedata viewer mod",
+            #                _config=self),
+            # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
+            # ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
+
+            GGXrdBackgroundGamepad(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots", _config=self),
+
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self), # Remove, probably
             # #Iquis would need to verify download differenlty
 
@@ -128,7 +131,8 @@ class GlobalConfig:
         # Export mods info
         for key, app in self.mod_dict.items():
             app: AppStruct
-            mods_dict[key] = app.export_config_dict()
+            if not issubclass(app.__class__, XrdBinaryPatcher):
+                mods_dict[key] = app.export_config_dict()
 
         config_dict["mods_info"] = mods_dict
         config_dict["xrd_path"] = self.xrd_path

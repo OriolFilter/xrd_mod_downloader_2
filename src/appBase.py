@@ -1,3 +1,4 @@
+import abc
 import asyncio
 import dataclasses
 import os.path
@@ -779,12 +780,81 @@ class StandAloneExeRequirement(InjectorApp, ABC):
         pass
 
 
-class XrdBinaryPatcher(AppStruct, ABC):
-    pass
-    # @abstractmethod
-    # async def _get_latest_version_name(self) -> str:
-    #     """
-    #     Return the desired target version.
-    #     Required to determine the installation path.
-    #     :return:
-    #     """
+class XrdBinaryPatcher(AppStruct, abc.ABC):
+    """
+    Patching Xrd Binary.
+
+    This only allows to patch/unpatch
+    """
+
+    @property
+    def tag_name(self) -> str:
+        return "N/A"
+
+    @tag_name.setter
+    def tag_name(self, tag_name: str):
+        pass
+
+    async def _download_version(self, version: str) -> bool:
+        raise Exception(f"{XrdBinaryPatcher.__name__} type cannot download files. Skipping...")
+
+    @property
+    def starts_at_boot(self) -> bool:
+        return self._is_binary_patched()
+
+    @property
+    async def is_up_to_date(self) -> bool:
+        """
+        No files are needed to be installed.
+        Will always be "up to date".
+        """
+        return True
+
+    @property
+    def can_be_launched(self) -> bool:
+        return False
+
+    def launch(self):
+        """
+        No Launch, only path or unpatch.
+        """
+        raise Exception(f"{XrdBinaryPatcher.__class__} type cannot be launched. Skipping...")
+
+    async def _get_latest_version_name(self) -> str:
+        """
+        Placeholder version, doest need to have something.
+        """
+        self.tag_name = "Nig"
+        # raise Exception(XrdBinaryPatcher._tag_name)
+        return self.tag_name
+
+    async def patch(self):
+        self._patch()
+
+    @property
+    def is_installed(self) -> bool:
+        """
+        No files are needed to be installed.
+        """
+        return True
+
+    @abstractmethod
+    def _patch(self):
+        """
+        Each mod needs to implement their own version function.
+        """
+        pass
+
+    @abstractmethod
+    def _is_binary_patched(self) -> bool:
+        """
+        Each mod needs to implement their own version function.
+        """
+        pass
+
+    @abstractmethod
+    def _disable_patch(self):
+        """
+        Each mod needs to implement their own version function.
+        """
+        pass
