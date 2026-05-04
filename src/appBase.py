@@ -703,6 +703,10 @@ class StandAloneExeRequirement(InjectorApp, ABC):
     def starts_at_boot(self) -> bool:
         return self.is_installed
 
+    async def update_app_to_latest(self):
+        await super().update_app_to_latest()
+        self.launch()
+
     async def _download_version(self, version_name: str) -> bool:
         if len(self._download_file_url) < 1:
             raise Exception(
@@ -716,6 +720,8 @@ class StandAloneExeRequirement(InjectorApp, ABC):
 
         urllib.request.urlretrieve(self._download_file_url, downloads_files_path.joinpath(self._executable_name))
         # TODO check if it did download and all that
+
+        # raise Exception(f"custom: {self.tag_name}")
         return True
 
     @property
