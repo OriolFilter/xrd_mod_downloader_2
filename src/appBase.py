@@ -824,8 +824,6 @@ class XrdBinaryPatcher(AppStruct, abc.ABC):
         """
         Placeholder version, doest need to have something.
         """
-        self.tag_name = "Nig"
-        # raise Exception(XrdBinaryPatcher._tag_name)
         return self.tag_name
 
     async def patch(self):
