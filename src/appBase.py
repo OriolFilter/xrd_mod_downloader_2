@@ -294,11 +294,14 @@ class InjectorApp(AppStruct, ABC):
     async def patch(self):
         self._patch()
 
-    async def toggle_patch(self):
-        """Toggle start on boot for the mod"""
-        if self._is_binary_patched:
-            self._unpatch_binary()
+    # async def toggle_patch(self):
+    #     """Toggle start on boot for the mod"""
+    #     if self._is_binary_patched:
+    #         self._unpatch_binary()
+    #
+    #     self._disable_patch()
 
+    async def disable_patch(self):
         self._disable_patch()
 
     def _disable_patch(self):
@@ -838,6 +841,9 @@ class XrdBinaryPatcher(AppStruct, abc.ABC):
         if self._is_binary_patched():
             raise Exception(f"{XrdBinaryPatcher.__class__} is already patched. Skipping...")
         self._patch()
+
+    async def disable_patch(self):
+        self._disable_patch()
 
     @property
     def is_installed(self) -> bool:

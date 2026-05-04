@@ -370,7 +370,7 @@ class DotNet(StandAloneExeRequirement):
 class GGXrdBackgroundGamepad(XrdBinaryPatcher):
     def _disable_patch(self):
         xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
-        with open(xrd_exe_path, "rb") as file:
+        with open(xrd_exe_path, "r+b") as file:
             file.seek(0x947762)
             file.write(b'\x0f\x84\x0d\x12\x00\x00')
             file.seek(0x9477f2 + 1)
