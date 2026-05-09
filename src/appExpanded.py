@@ -264,33 +264,22 @@ class GGXrdFreeCam(InjectorApp, GithubApp):
     def _key_dll(self) -> str:
         return "ggxrd_freecam_dll.dll"
 
-    # @property
-    # def _is_binary_patched(self) -> bool:
-    #     """
-    #     Code from kkots.
-    #     """
-    #     raise NotImplementedError
-    #     hardcoded_patch_place_raw = 0x970126
-    #     xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
-    #
-    #     with open(xrd_exe_path, "rb") as file:
-    #         file.seek(hardcoded_patch_place_raw)
-    #         if file.read(1) != b'\xe9':
-    #             return False
-    #     return True
-    #
-    # def _unpatch_binary(self):
-    #     # TODO
-    #     # Prevent unpatch if version is less than 15
-    #     # Windows doesn't allow to write a file if it's already open.
-    #     # So... on Windows raise an error if Xrd is open.
-    #     raise NotImplementedError
-    #     if sys.platform == 'win32':
-    #         for pid in psutil.process_iter():
-    #             if pid.name() == "GuiltyGearXrd.exe":
-    #                 raise Exception(f"Cannot unpatch '{self.app_name}' if Xrd is running.\n"
-    #                                 "Please close Xrd before using.")
-    #     functions.unpatch_hitbox_overlay_exe(Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe"))
+    @property
+    def _is_binary_patched(self) -> bool:
+        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        return functions.is_freecam_overlay_patched(xrd_exe_path)
+
+    def _unpatch_binary(self):
+        # Windows doesn't allow to write a file if it's already open.
+        # So... on Windows raise an error if Xrd is open.
+        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+
+        if sys.platform == 'win32':
+            for pid in psutil.process_iter():
+                if pid.name() == "GuiltyGearXrd.exe":
+                    raise Exception(f"Cannot unpatch '{self.app_name}' if Xrd is running.\n"
+                                    "Please close Xrd before using.")
+        functions.unpatch_hitbox_overlay_exe(xrd_exe_path)
 
     @property
     def _required_files(self) -> [str]:

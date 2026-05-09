@@ -529,9 +529,7 @@ class InjectorApp(AppStruct, ABC):
                         raise Exception(f"Wineloader path doesn't exist.\nPath='{wineloader}'.")
                 else:
                     raise WineLoaderNotFound(xrd_pid=xrd_process.pid)
-                # raise Exception(wineloader)
                 wineprefix = envs.get("WINEPREFIX")
-                raise Exception(wineprefix)
                 if not wineprefix:
                     raise WinePrefixNotFound(xrd_pid=xrd_process.pid)
 
