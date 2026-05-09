@@ -38,7 +38,7 @@ class GlobalConfig:
             GGXrdFreeCam(repo_name="ggxrd_freecam", repo_owner="kkots",
                          _config=self, description="Camera free movement unlock mod.",),
 
-            GGXrdVersionSelector(repo_name="GGXrdDisplayPing", repo_owner="kkots", _config=self,
+            GGXrdDisplayPing(repo_name="GGXrdDisplayPing", repo_owner="kkots", _config=self,
                                  description="Display room's Ping"),
 
             GGXrdVersionSelector(repo_name="GGXrdVersionSelector", repo_owner="kkots", _config=self),

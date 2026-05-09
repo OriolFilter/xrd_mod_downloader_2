@@ -166,6 +166,7 @@ class ModManagerApp(App):
         if not app.is_installed:
             self.notify(f"Can't patch.\nApp not installed: {app.app_name}",
                         severity="warning")
+            return 0
         elif not app.starts_at_boot:
             self.notify(f"Patching App: {app.app_name}",
                         severity="warning")
