@@ -12,6 +12,7 @@ def unpatch_hitbox_overlay_exe(guilty_gear_xrd_exe_path):
     # Returns Nothing
     # by: @kkots
     # I... just copied and pasted it.
+    # This is only to unpatch old stuff, no intend to patch the binary again.
     :param guilty_gear_xrd_exe_path:
     :return:
     """
