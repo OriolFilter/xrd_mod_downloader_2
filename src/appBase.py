@@ -302,7 +302,10 @@ class InjectorApp(AppStruct, ABC):
     #     self._disable_patch()
 
     async def disable_patch(self):
-        self._disable_patch()
+        if self._is_binary_patched:
+            self._unpatch_binary()
+        if self._bat_file_enabled:
+            self._disable_patch()
 
     def _disable_patch(self):
         """
@@ -526,8 +529,9 @@ class InjectorApp(AppStruct, ABC):
                         raise Exception(f"Wineloader path doesn't exist.\nPath='{wineloader}'.")
                 else:
                     raise WineLoaderNotFound(xrd_pid=xrd_process.pid)
-
+                # raise Exception(wineloader)
                 wineprefix = envs.get("WINEPREFIX")
+                raise Exception(wineprefix)
                 if not wineprefix:
                     raise WinePrefixNotFound(xrd_pid=xrd_process.pid)
 
