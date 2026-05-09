@@ -24,21 +24,24 @@ class GlobalConfig:
         mod_list = [
             DotNet(repo_owner="Microsoft", repo_name=".Net 6", _config=self,
                    description="Required to launch the Reversal Tool"),
-            # HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
-            #                repo_owner="kkots",
-            #                description="Hitbox/framedata viewer mod",
-            #                _config=self),
-            # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
-            # ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
+
+            HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
+                           repo_owner="kkots",
+                           description="Hitbox/framedata viewer mod",
+                           _config=self),
+
+            WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
+
+            ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
 
             GGXrdBackgroundGamepad(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots", _config=self),
+            GGXrdFreeCam(repo_name="ggxrd_freecam", repo_owner="kkots", _config=self),
 
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self), # Remove, probably
             # #Iquis would need to verify download differenlty
 
             # AppStruct(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", _config=self),
             # AppStruct(repo_name="GGXrdMirrorColorSelect", repo_owner="kkots", _config=self),
-            # AppStruct(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots", _config=self),
             # GGXrdChangeBorderlessWindowPos idk about this one
             # https://github.com/kkots/GGXrdAutomaticallyChangeAudioDevice
             # https://github.com/kkots/GGXrdDisplayPing

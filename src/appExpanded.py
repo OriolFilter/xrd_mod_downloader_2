@@ -211,6 +211,90 @@ class HitboxOverlay(InjectorApp, GithubApp):
         return ["-force"]
 
 
+class GGXrdFreeCam(InjectorApp, GithubApp):
+    @property
+    def _key_dll(self) -> str:
+        return "ggxrd_freecam_dll.dll"
+
+    # @property
+    # def _is_binary_patched(self) -> bool:
+    #     """
+    #     Code from kkots.
+    #     """
+    #     raise NotImplementedError
+    #     hardcoded_patch_place_raw = 0x970126
+    #     xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+    #
+    #     with open(xrd_exe_path, "rb") as file:
+    #         file.seek(hardcoded_patch_place_raw)
+    #         if file.read(1) != b'\xe9':
+    #             return False
+    #     return True
+    #
+    # def _unpatch_binary(self):
+    #     # TODO
+    #     # Prevent unpatch if version is less than 15
+    #     # Windows doesn't allow to write a file if it's already open.
+    #     # So... on Windows raise an error if Xrd is open.
+    #     raise NotImplementedError
+    #     if sys.platform == 'win32':
+    #         for pid in psutil.process_iter():
+    #             if pid.name() == "GuiltyGearXrd.exe":
+    #                 raise Exception(f"Cannot unpatch '{self.app_name}' if Xrd is running.\n"
+    #                                 "Please close Xrd before using.")
+    #     functions.unpatch_hitbox_overlay_exe(Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe"))
+
+    @property
+    def _required_files(self) -> [str]:
+        return [
+            self._executable_name,
+            self._key_dll,
+            "ggxrd_freecam.ini"
+        ]
+
+    @property
+    def _executable_name(self) -> str:
+        """
+        If syswow64 is found, use the 64bit injector, else the 32.
+
+        If not linux or windows raise error.
+        :return: str
+        """
+
+        match sys.platform:
+            case 'linux':
+                # Get to the steam "root" folder
+                # /home/$HOME/.local/share/Steam/steamapps
+                steam_apps_path = Path(self._config.xrd_path).parent.parent
+
+                drivec_windows_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/windows")
+                if drivec_windows_path.exists() and drivec_windows_path.is_dir():
+                    if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath('syswow64'):
+                        return "ggxrd_freecam_injector64bit.exe"
+                return "ggxrd_freecam_injector.exe"
+
+            case 'win32':
+                from sys import maxsize
+                if maxsize > 2 ** 32:
+                    return "ggxrd_freecam_injector64bit.exe"
+                return "ggxrd_freecam_injector.exe"
+
+            case _:
+                raise NotImplementedError
+
+    def _get_assets_whitelist(self, tag: str) -> [str]:
+        assets_whitelist = ["ggxrd_freecam.zip"]
+        return assets_whitelist
+
+    @property
+    def _launch_extra_args(self) -> [str]:
+        """
+        "Force" the injection to avoid the window popup
+        :return:
+        """
+        return ["-force"]
+
+
 class VsRedistributableBase(StandAloneExeRequirement, ABC):
 
     @property
