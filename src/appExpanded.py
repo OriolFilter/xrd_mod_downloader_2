@@ -175,6 +175,14 @@ class GGXrdDisplayPing(InjectorApp, GithubApp):
         assets_whitelist = ["GGXrdDisplayPing.zip"]
         return assets_whitelist
 
+    @property
+    def _launch_extra_args(self) -> [str]:
+        """
+        "Force" the injection to avoid the window popup
+        :return:
+        """
+        return ["-force"]
+
 
 class HitboxOverlay(InjectorApp, GithubApp):
     @property
