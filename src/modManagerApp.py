@@ -112,6 +112,7 @@ class ModManagerApp(App):
                                # cursor_background_priority="renderable"
                                )
         self.table.styles.min_height = 15
+        self.table.styles.width = "100%"
         yield Footer()
 
         yield self.table

@@ -39,7 +39,7 @@ class GenericGithubApp(InjectorApp, GithubApp):
         return "placeholder.exe"
 
     def _get_assets_whitelist(self, tag: str) -> [str]:
-        raise NotImplementedError("_download_app for app {}".format(self.__class__))
+        raise NotImplementedError("_get_assets_whitelist for app {}".format(self.__class__))
 
 
 class WakeUpTool(InjectorApp, GithubApp):
@@ -182,6 +182,52 @@ class GGXrdDisplayPing(InjectorApp, GithubApp):
         :return:
         """
         return ["-force"]
+
+
+class GGXrdVersionSelector(InjectorApp, GithubApp):
+
+    @property
+    def _key_dll(self) -> str:
+        """
+        No DLL to keep track of
+        :return:
+        """
+        return ""
+
+    @property
+    def _required_files(self) -> [str]:
+        return [self._executable_name]
+
+    @property
+    def _executable_name(self) -> str:
+        """
+        If syswow64 is found, use the 64bit injector, else the 32.
+
+        If not linux or windows raise error.
+        :return: str
+        """
+
+        match sys.platform:
+            case 'linux':
+                # Get to the steam "root" folder
+                # /home/$HOME/.local/share/Steam/steamapps
+                steam_apps_path = Path(self._config.xrd_path).parent.parent
+
+                # Linux only supports the 32Bit. Proton (right now) doesn't have he required libraries.
+                return "GGXrdVersionSelector.exe"
+
+            case 'win32':
+                from sys import maxsize
+                if maxsize > 2 ** 32:
+                    return "GGXrdVersionSelector.exe"
+                return "GGXrdVersionSelector.exe"
+
+            case _:
+                raise NotImplementedError(f"System \"{sys.platform}\" is not supported for {self.__class__.__name__}")
+
+    def _get_assets_whitelist(self, tag: str) -> [str]:
+        assets_whitelist = ["GGXrdVersionSelector.zip"]
+        return assets_whitelist
 
 
 class HitboxOverlay(InjectorApp, GithubApp):

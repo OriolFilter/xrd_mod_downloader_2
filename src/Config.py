@@ -30,14 +30,18 @@ class GlobalConfig:
                            description="Hitbox/framedata viewer mod",
                            _config=self),
 
-            # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
-            #
-            # ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
-            #
-            # GGXrdBackgroundGamepad(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots", _config=self),
+            WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
+
+            ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
+
+            GGXrdBackgroundGamepad(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots", _config=self),
             GGXrdFreeCam(repo_name="ggxrd_freecam", repo_owner="kkots",
                          _config=self, description="Camera free movement unlock mod.",),
-            # GGXrdDisplayPing(repo_name="GGXrdDisplayPing", repo_owner="kkots", _config=self),
+
+            GGXrdVersionSelector(repo_name="GGXrdDisplayPing", repo_owner="kkots", _config=self,
+                                 description="Display room's Ping"),
+
+            GGXrdVersionSelector(repo_name="GGXrdVersionSelector", repo_owner="kkots", _config=self),
 
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self), # Remove, probably
             # #Iquis would need to verify download differenlty
