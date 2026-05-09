@@ -36,6 +36,7 @@ class GlobalConfig:
 
             GGXrdBackgroundGamepad(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots", _config=self),
             GGXrdFreeCam(repo_name="ggxrd_freecam", repo_owner="kkots", _config=self),
+            GGXrdDisplayPing(repo_name="GGXrdDisplayPing", repo_owner="kkots", _config=self),
 
             # WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="Iquis", _config=self), # Remove, probably
             # #Iquis would need to verify download differenlty

@@ -128,6 +128,54 @@ class ReplayTakeover(InjectorApp, GithubApp):
         return assets_whitelist
 
 
+class GGXrdDisplayPing(InjectorApp, GithubApp):
+
+    @property
+    def _key_dll(self) -> str:
+        return "GGXrdDisplayPing.dll"
+
+    @property
+    def _required_files(self) -> [str]:
+        return [
+            self._key_dll,
+            self._executable_name,
+        ]
+
+    @property
+    def _executable_name(self) -> str:
+        """
+        If syswow64 is found, use the 64bit injector, else the 32.
+
+        If not linux or windows raise error.
+        :return: str
+        """
+
+        match sys.platform:
+            case 'linux':
+                # Get to the steam "root" folder
+                # /home/$HOME/.local/share/Steam/steamapps
+                steam_apps_path = Path(self._config.xrd_path).parent.parent
+
+                drivec_windows_path = steam_apps_path.joinpath("compatdata/520440/pfx/drive_c/windows")
+                if drivec_windows_path.exists() and drivec_windows_path.is_dir():
+                    if drivec_windows_path.joinpath('syswow64').exists() and drivec_windows_path.joinpath('syswow64'):
+                        return "GGXrdDisplayPingInjector64bit.exe"
+                return "GGXrdDisplayPingInjector.exe"
+
+            case 'win32':
+                from sys import maxsize
+                if maxsize > 2 ** 32:
+                    return "GGXrdDisplayPingInjector64bit.exe"
+                return "GGXrdDisplayPingInjector.exe"
+
+            case _:
+                raise NotImplementedError(f"System \"{sys.platform}\" is not supported for {self.__class__.__name__}")
+
+    def _get_assets_whitelist(self, tag: str) -> [str]:
+        assets_whitelist = ["GGXrdDisplayPing.zip"]
+        return assets_whitelist
+
+
 class HitboxOverlay(InjectorApp, GithubApp):
     @property
     def _key_dll(self) -> str:
@@ -196,7 +244,7 @@ class HitboxOverlay(InjectorApp, GithubApp):
                 return "ggxrd_hitbox_injector.exe"
 
             case _:
-                raise NotImplementedError
+                raise NotImplementedError(f"System \"{sys.platform}\" is not supported for {self.__class__.__name__}")
 
     def _get_assets_whitelist(self, tag: str) -> [str]:
         assets_whitelist = ["ggxrd_hitbox_overlay.zip"]
@@ -280,7 +328,7 @@ class GGXrdFreeCam(InjectorApp, GithubApp):
                 return "ggxrd_freecam_injector.exe"
 
             case _:
-                raise NotImplementedError
+                raise NotImplementedError(f"System \"{sys.platform}\" is not supported for {self.__class__.__name__}")
 
     def _get_assets_whitelist(self, tag: str) -> [str]:
         assets_whitelist = ["ggxrd_freecam.zip"]
@@ -387,7 +435,7 @@ class DotNet(StandAloneExeRequirement):
                 else:
                     arch = "x86"
             case _:
-                raise NotImplementedError
+                raise NotImplementedError(f"System \"{sys.platform}\" is not supported for {self.__class__.__name__}")
         return f"dotnet-sdk-win-{arch}.exe"
 
     @property
