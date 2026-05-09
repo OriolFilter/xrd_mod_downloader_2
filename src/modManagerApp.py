@@ -49,8 +49,8 @@ class ModManagerApp(App):
             # "app_name": "AppName",
             "installed": "Installed",
             "starts_at_boot": "Auto Start",
-            "tag_name": " Current ",
-            "latest_version_available": " Latest ",  # Or Up to date
+            "tag_name": "Current",
+            "latest_version_available": "Latest",  # Or Up to date
             # "up_to_date": "Up To Date",
             "description": "Description",
         }
@@ -112,7 +112,6 @@ class ModManagerApp(App):
                                # cursor_background_priority="renderable"
                                )
         self.table.styles.min_height = 15
-        self.table.styles.width = "100%"
         yield Footer()
 
         yield self.table
@@ -231,8 +230,7 @@ class ModManagerApp(App):
             }
 
             for column in columns:
-                # self.table.update_cell(value=Text(str("cell"), style="italic #03AC13", justify="right"), row_key=row, column_key=column)
                 if app_info.get(column) is not Text:
-                    self.table.update_cell(value=app_info.get(column), row_key=row, column_key=column)
+                    self.table.update_cell(value=app_info.get(column), row_key=row, column_key=column, update_width=True)
                 else:
-                    self.table.update_cell(value=Text(app_info.get(column) or UNKNOWN), row_key=row, column_key=column)
+                    self.table.update_cell(value=Text(app_info.get(column) or UNKNOWN), row_key=row, column_key=column, update_width=True)
