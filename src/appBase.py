@@ -353,7 +353,7 @@ FOR /L %%I IN (1,1,30) DO (
 )
 :finish
 %CHECK_XRD% && start /MIN {app_directory}/{executable_name} {extra_args} || echo Xrd didn't launch...
-    """.format(
+""".format(
             app_directory=self.app_name.replace("/", "_"),
             executable_name=self._executable_name,
             extra_args=" ".join(f'"{arg}"' for arg in self._launch_extra_args)
