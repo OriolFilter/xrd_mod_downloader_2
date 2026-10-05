@@ -551,23 +551,28 @@ FOR /L %%I IN (1,1,30) DO (
         elif not os.path.isdir(new_release_files_path):
             raise Exception("Downloads path ({}) is occupied by a file".format(new_release_files_path))
 
+        import io
         for asset in files_to_download:
             async with aiohttp.ClientSession() as session:
-                async with session.head(f'{self.get_repo_releases_url()}/download/{tag_name}/{asset}', timeout=5,
+                async with session.get(f'{self.get_repo_releases_url()}/download/{tag_name}/{asset}', timeout=5,
                                         ssl=sslcontext, allow_redirects=True) as resp:
                     content = await resp.read()
                     if resp.status != 200:
                         raise Exception(
-                            f"Failed to download the file {asset} from the release {tag_name}. Repository {self.repo_owner}/{self.repo_name}")
+                            f"Failed to download the file {asset} from the release {tag_name}. "
+                            f"Status code {resp.status}. "
+                            f"Repository {self.repo_owner}/{self.repo_name}")
+                    # if asset.endswith(".zip"):
+                    #     with ZipFile(io.BytesIO(content)) as z:
+                    #         z.extractall(path=new_release_files_path)
+                    # #         # TODO only extract desired files
+                    # else:
                     async with aiofiles.open(file=f"{new_release_files_path}/{asset}", mode='wb+') as file:
                         await file.write(content)
-
-        # # # For each zip unzip
-        # for file in files_to_download:
-        #     if file.name.endswith(".zip"):
-        #         with ZipFile(f"{new_release_files_path}/{file.name}") as z:
-        #             z.extractall(path=new_release_files_path)
-        #             # TODO only extract desired files
+            if asset.endswith(".zip"):
+                with ZipFile(f"{new_release_files_path}/{asset}") as z:
+                    z.extractall(path=new_release_files_path)
+            #         # TODO only extract desired files
         return True
 
     def get_assets_whitelist(self, tag: str) -> [str]:
