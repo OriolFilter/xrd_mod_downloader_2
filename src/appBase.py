@@ -654,9 +654,16 @@ class GithubApp(AppStruct, ABC):
 
     async def _get_latest_version_name(self) -> str:
         if not self._latest_version_name:
+            import certifi
+            import ssl
+
             url = f"https://github.com/{self.repo_owner}/{self.repo_name}/releases/latest"
+
+            # Aiohttp can sometimes fail to very certs so this passes the device allowed certs issuers
+            sslcontext = ssl.create_default_context(cafile=certifi.where())
+
             async with aiohttp.ClientSession() as session:
-                async with session.head(url, timeout=5) as resp:
+                async with session.head(url, timeout=5, ssl=sslcontext) as resp:
                     latest_url = resp.headers.get("Location")
                     if resp.status and any(latest_url) and latest_url.startswith(
                             f"https://github.com/{self.repo_owner}/{self.repo_name}/releases/tag/"):
