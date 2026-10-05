@@ -329,7 +329,7 @@ class RelocTable:
 # Second version added automash through the loading screen.
 # Third version sped up the bootup time and added an option to skip intro cutscenes and included a patch for daylight saving INI reset.
 # This will detect if the latest version was applied, as it has some non-optional (mandatory) patches that get applied that are not present in the earlier versions.
-def is_patched(guilty_gear_xrd_exe_path) -> bool:
+def is_patched(guilty_gear_xrd_exe_path: str) -> bool:
     with open(guilty_gear_xrd_exe_path, "rb") as f:
         f.seek(
             0xaff080)  # position of REDGfxMoviePlayer_MenuInterlude::execIsAsyncLoading in Guilty Gear Xrd Rev 2 version 2211
@@ -354,8 +354,8 @@ def is_patched(guilty_gear_xrd_exe_path) -> bool:
 #    "skip_automatically"
 #    "dont_change_anything"
 # fix_bug_that_causes_ini_file_to_reset_twice_a_year_in_countries_with_daylight_saving: True/False, suggested if intro_movies_skip_mode is "skippable_by_pressing_enter", because that approach requires editing an INI, and if you don't fix the bug the INI will reset when daylight saving changes to regular time or vice versa.
-def patch(guilty_gear_xrd_exe_path, automash, intro_movies_skip_mode,
-          fix_bug_that_causes_ini_file_to_reset_twice_a_year_in_countries_with_daylight_saving):
+def patch(guilty_gear_xrd_exe_path: str, automash: bool, intro_movies_skip_mode: str,
+          fix_bug_that_causes_ini_file_to_reset_twice_a_year_in_countries_with_daylight_saving: bool) -> bool:
     debug = False
     RelocTable.debug = debug
 
@@ -1719,7 +1719,7 @@ def patch(guilty_gear_xrd_exe_path, automash, intro_movies_skip_mode,
 # Returns False if failed.
 # Returns True on successful unpatching.
 # Raises exception if the EXE file is corrupted.
-def unpatch(guilty_gear_xrd_exe_path, also_make_intro_cutscenes_unskippable):
+def unpatch(guilty_gear_xrd_exe_path: str, also_make_intro_cutscenes_unskippable: bool):
     RelocTable.debug = False
 
     with open(guilty_gear_xrd_exe_path, "r+b") as f:

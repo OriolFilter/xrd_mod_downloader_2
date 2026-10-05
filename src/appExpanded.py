@@ -16,6 +16,9 @@ from github.GitReleaseAsset import GitReleaseAsset
 import functions
 from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
 from appBase import InjectorApp, StandAloneExeRequirement, GithubApp, XrdBinaryPatcher
+from FasterLoadingTimes.patch_unpatch_FasterLoadingTimes import (patch as fasterLoadingTimes_patch,
+                                                                 is_patched as fasterLoadingTimes_is_patched,
+                                                                 unpatch as fasterLoadingTimes_unpatch)
 
 
 # from Config import GlobalConfig
@@ -565,3 +568,21 @@ class GGXrdBackgroundGamepad(XrdBinaryPatcher):
             file.write(b'\x0e')
             file.seek(0x94c008 + 9)
             file.write(b'\x0e')
+
+
+class GGXrdFasterLoadingTimes(XrdBinaryPatcher):
+    def _disable_patch(self):
+        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        return fasterLoadingTimes_unpatch(guilty_gear_xrd_exe_path=str(xrd_exe_path), also_make_intro_cutscenes_unskippable=True)
+
+    def _is_binary_patched(self) -> bool:
+        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        return fasterLoadingTimes_is_patched(str(xrd_exe_path))
+
+    def _patch(self):
+        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        # TODO add a picker to select options/stuff
+        fasterLoadingTimes_patch(guilty_gear_xrd_exe_path=str(xrd_exe_path),
+                                 automash=True,
+                                 intro_movies_skip_mode="skip_automatically",
+                                 fix_bug_that_causes_ini_file_to_reset_twice_a_year_in_countries_with_daylight_saving=True)

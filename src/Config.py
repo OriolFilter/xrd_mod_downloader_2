@@ -35,6 +35,8 @@ class GlobalConfig:
             ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
 
             GGXrdBackgroundGamepad(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots", _config=self),
+            GGXrdFasterLoadingTimes(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", _config=self),
+
             GGXrdFreeCam(repo_name="ggxrd_freecam", repo_owner="kkots",
                          _config=self, description="Camera free movement unlock mod.",),
 
