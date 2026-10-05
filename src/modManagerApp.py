@@ -95,11 +95,6 @@ class ModManagerApp(App):
                             severity="warning")
             elif not app.can_be_launched:
                 # TODO check if dotnet is required/is installed
-                # if issubclass(app.__class__, XrdBinaryPatcher):
-                #     self.notify(f"App {app.app_name} can't be launched, use the patch function instead to toggle "
-                #                 f"autostart with Xrd",
-                #                 severity="error")
-                # else:
                 self.notify(f"Can't launch app {app.app_name}.\nEnsure the app is installed.",
                             severity="error")
             else:
