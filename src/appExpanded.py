@@ -16,9 +16,9 @@ from github.GitReleaseAsset import GitReleaseAsset
 import functions
 from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
 from appBase import InjectorApp, StandAloneExeRequirement, GithubApp, XrdBinaryPatcher
-from FasterLoadingTimes.patch_unpatch_FasterLoadingTimes import (patch as fasterLoadingTimes_patch,
-                                                                 is_patched as fasterLoadingTimes_is_patched,
-                                                                 unpatch as fasterLoadingTimes_unpatch)
+from FasterLoadingTimes.patch_unpatch import (patch as fasterLoadingTimes_patch,
+                                              is_patched as fasterLoadingTimes_is_patched,
+                                              unpatch as fasterLoadingTimes_unpatch)
 
 
 # from Config import GlobalConfig
