@@ -573,7 +573,8 @@ class GGXrdBackgroundGamepad(XrdBinaryPatcher):
 class GGXrdFasterLoadingTimes(XrdBinaryPatcher):
     def _disable_patch(self):
         xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
-        return fasterLoadingTimes_unpatch(guilty_gear_xrd_exe_path=str(xrd_exe_path), also_make_intro_cutscenes_unskippable=True)
+        return fasterLoadingTimes_unpatch(guilty_gear_xrd_exe_path=str(xrd_exe_path),
+                                          also_make_intro_cutscenes_unskippable=True)
 
     def _is_binary_patched(self) -> bool:
         xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
