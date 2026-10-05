@@ -5,6 +5,7 @@ import os.path
 import shutil
 import subprocess
 import sys
+import time
 import urllib.request
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -175,6 +176,7 @@ class AppStruct(AppPublic, ABC):
         # loop.close()
         latest_version = await self.get_latest_version_name()
         downloads_result = await self.download_version(latest_version)
+
         # raise Exception(f"download result={downloads_result}")
         # raise Exception(f"Downloads result = {await downloads_result}")
         if not downloads_result:
@@ -548,36 +550,16 @@ FOR /L %%I IN (1,1,30) DO (
         elif not os.path.isdir(new_release_files_path):
             raise Exception("Downloads path ({}) is occupied by a file".format(new_release_files_path))
 
-        # TODO check MD5/sha to verify if file is OK and skip download.
-
-        ## This code seems to be slower than the other downloader mode # TODO CLEANUP. Only keeping up for current discussions about performance/locking
-        # import datetime
-        # before = datetime.datetime.now()
-        # for asset in files_to_download:
-        #     async with aiohttp.ClientSession() as session:
-        #         async with session.get(f'{self.get_repo_releases_url()}/download/{tag_name}/{asset}', timeout=5, ssl=sslcontext) as resp:
-        #             content = await resp.read()
-        #             # content =
-        #             if resp.status != 200:
-        #                 raise Exception(f"Failed to download the file {asset} from the release {tag_name}. Repository {self.repo_owner}/{self.repo_name}")
-        #             async with aiofiles.open(file=f"{new_release_files_path}/{asset}", mode='wb+') as file:
-        #                 await file.write(content)
-        #
-        # after = datetime.datetime.now()
-
-        # before2 = datetime.datetime.now()
         for asset in files_to_download:
             async with aiohttp.ClientSession() as session:
                 async with session.head(f'{self.get_repo_releases_url()}/download/{tag_name}/{asset}', timeout=5,
-                                        ssl=sslcontext) as resp:
-                    if resp.status == 200:
-                        file = await aiofiles.open(file=f"{new_release_files_path}/{asset.name}", mode="wb+")
-                        await file.write(await resp.read())
-                        await file.close()
-
-        # after2 = datetime.datetime.now()
-
-        # raise Exception(f"{after - before} vs {after2 - before2}")
+                                        ssl=sslcontext, allow_redirects=True) as resp:
+                    content = await resp.read()
+                    if resp.status != 200:
+                        raise Exception(
+                            f"Failed to download the file {asset} from the release {tag_name}. Repository {self.repo_owner}/{self.repo_name}")
+                    async with aiofiles.open(file=f"{new_release_files_path}/{asset}", mode='wb+') as file:
+                        await file.write(content)
 
         # # # For each zip unzip
         # for file in files_to_download:
