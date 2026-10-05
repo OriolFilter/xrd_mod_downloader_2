@@ -415,7 +415,6 @@ FOR /L %%I IN (1,1,30) DO (
 :finish
 %CHECK_XRD% && cd {app_directory} && start /MIN {executable_name} {extra_args}
 
-exit
 """.format(
             app_directory=self.app_name.replace("/", "_"),
             executable_name=self._executable_name,
