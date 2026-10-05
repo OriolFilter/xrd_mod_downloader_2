@@ -275,6 +275,7 @@ class GithubApp(AppStruct, ABC):
                         latest_tag = latest_url.removeprefix(
                             f"{self.get_repo_releases_url()}/tag/")
                         if latest_tag:
+                            self._latest_version_name = latest_tag
                             return latest_tag
         return self._latest_version_name
 
