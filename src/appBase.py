@@ -452,6 +452,19 @@ FOR /L %%I IN (1,1,30) DO (
         # TODO async
         # raise NotImplementedError(f"_download_version {self.__class__}")
         # release: GitRelease = ...  # TODO send curl, get version -> generate GitRelease object
+
+        # Get github repository:
+        # repo = github.Repository()
+
+        # async with aiohttp.ClientSession() as session:
+        #     async with session.head({self.get_repo_url(), timeout=5, ssl=sslcontext) as resp:
+        #         if resp.status == 200:
+        #             # print("OK!")
+        #             file = await aiofiles.open(file=f"{new_release_files_path}/{asset.name}")
+        #             await file.write(await resp.read())
+        #             await file.close()
+
+
         release: GitRelease = self._config.github_client.get_repo(self.app_name).get_release(version_name)
         files_to_download: [GitReleaseAsset] = []
         assets_whitelist = self.get_assets_whitelist(tag=release.tag_name)
@@ -670,7 +683,7 @@ class GithubApp(AppStruct, ABC):
             import certifi
             import ssl
 
-            url = f"https://github.com/{self.repo_owner}/{self.repo_name}/releases/latest"
+            url = f"{self.get_repo_url()}/releases/latest"
 
             # Aiohttp can sometimes fail to very certs so this passes the device allowed certs issuers
             sslcontext = ssl.create_default_context(cafile=certifi.where())
@@ -679,9 +692,9 @@ class GithubApp(AppStruct, ABC):
                 async with session.head(url, timeout=5, ssl=sslcontext) as resp:
                     latest_url = resp.headers.get("Location")
                     if resp.status and any(latest_url) and latest_url.startswith(
-                            f"https://github.com/{self.repo_owner}/{self.repo_name}/releases/tag/"):
+                            f"{self.get_repo_url()}/releases/tag/"):
                         latest_tag = latest_url.removeprefix(
-                            f"https://github.com/{self.repo_owner}/{self.repo_name}/releases/tag/")
+                            f"{self.get_repo_url()}/releases/tag/")
                         if latest_tag:
                             return latest_tag
         return self._latest_version_name
