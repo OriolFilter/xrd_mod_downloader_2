@@ -88,7 +88,7 @@ class ModManagerApp(App):
         app = self.selected_app
         app: AppPublic
         if issubclass(app.__class__, XrdBinaryPatcher):
-            await self.action_patch_mod()
+            await self._action_patch_mod(app=app)
         else:
             if not app.is_installed:
                 self.notify(f"App {app.app_name} is not installed.\nInstall before launching.",
@@ -169,8 +169,11 @@ class ModManagerApp(App):
         await self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "starts_at_boot"])
 
     async def action_patch_mod(self):
-        app = self.selected_app
-        # if app.is_patched():
+        await self._action_patch_mod()
+
+    async def _action_patch_mod(self, app=None):
+        if not app:
+            app = self.selected_app
 
         if not app.is_installed:
             self.notify(f"Can't patch.\nApp not installed: {app.app_name}",
