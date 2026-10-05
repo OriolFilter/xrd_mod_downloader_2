@@ -15,7 +15,6 @@ import aiofiles
 import aiohttp
 import psutil
 from github import GitRelease
-from github.GitReleaseAsset import GitReleaseAsset
 
 import functions
 from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
@@ -225,6 +224,7 @@ class AppStruct(AppPublic, ABC):
     def current_version_files_path(self) -> Path:
         return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(self.tag_name)
 
+
 class GithubApp(AppStruct, ABC):
     """
     Used by apps that use Github as their source.
@@ -235,8 +235,18 @@ class GithubApp(AppStruct, ABC):
     def get_repo_url(self) -> str:
         return "https://github.com/{}/{}".format(self.repo_owner, self.repo_name)
 
+    def get_repo_releases_url(self) -> str:
+        """
+        Non .api call to reduce number of calls there
+        :return:
+        """
+        return "https://github.com/{}/{}/releases".format(self.repo_owner, self.repo_name)
+
     def get_api_repo_url(self) -> str:
         return "https://api.github.com/repos/{}/{}".format(self.repo_owner, self.repo_name)
+
+    def get_api_releases_url(self) -> str:
+        return "https://api.github.com/repos/{}/{}/releases".format(self.repo_owner, self.repo_name)
 
     # @property
     # def latest_release(self) -> GitRelease:
@@ -249,7 +259,8 @@ class GithubApp(AppStruct, ABC):
             import certifi
             import ssl
 
-            url = f"{self.get_repo_url()}/releases/latest"
+            # Reduce number of .api. calls
+            url = f"{self.get_repo_releases_url()}/latest"
 
             # Aiohttp can sometimes fail to very certs so this passes the device allowed certs issuers
             sslcontext = ssl.create_default_context(cafile=certifi.where())
@@ -258,9 +269,9 @@ class GithubApp(AppStruct, ABC):
                 async with session.head(url, timeout=5, ssl=sslcontext) as resp:
                     latest_url = resp.headers.get("Location")
                     if resp.status and any(latest_url) and latest_url.startswith(
-                            f"{self.get_repo_url()}/releases/tag/"):
+                            f"{self.get_repo_releases_url()}/tag/"):
                         latest_tag = latest_url.removeprefix(
-                            f"{self.get_repo_url()}/releases/tag/")
+                            f"{self.get_repo_releases_url()}/tag/")
                         if latest_tag:
                             return latest_tag
         return self._latest_version_name
@@ -493,33 +504,33 @@ FOR /L %%I IN (1,1,30) DO (
         # Aiohttp can sometimes fail to very certs so this passes the device allowed certs issuers
         sslcontext = ssl.create_default_context(cafile=certifi.where())
 
-        # TODO async
-        # raise NotImplementedError(f"_download_version {self.__class__}")
-        # release: GitRelease = ...  # TODO send curl, get version -> generate GitRelease object
-
-        # Get github repository:
-        # repo = github.Repository()
+        release_dictionary: dict | None = None
+        assets: [str] = []
+        tag_name: str | None = None
+        tag_url = f"{self.get_api_releases_url()}/tags/{version_name}"
 
         async with aiohttp.ClientSession() as session:
-            async with session.head(self.get_api_repo_url(), timeout=5, ssl=sslcontext) as resp:
+            async with session.get(tag_url,
+                                   timeout=5,
+                                   ssl=sslcontext) as resp:
                 if resp.status == 200:
-                    # print("OK!")
-                    file = await aiofiles.open(file=f"{new_release_files_path}/{asset.name}")
-                    await file.write(await resp.read())
-                    await file.close()
+                    release_dictionary = await resp.json()
+                    tag_name = release_dictionary.get('tag_name')
+                else:
+                    raise Exception(f"Failed to get release with tag '{version_name}'")
 
+        for asset in release_dictionary.get('assets'):
+            assets.append(asset.get('name'))
 
-        release: GitRelease = self._config.github_client.get_repo(self.app_name).get_release(version_name)
-        files_to_download: [GitReleaseAsset] = []
-        assets_whitelist = self.get_assets_whitelist(tag=release.tag_name)
+        files_to_download: [str] = []
+        assets_whitelist = self.get_assets_whitelist(tag=tag_name)
 
         new_release_files_path = Path(self._config.app_download_path).joinpath(
-            self.app_name.replace("/", "_")).joinpath(release.tag_name)
-        for asset in release.assets:
-            asset: GitReleaseAsset
-            if asset.name in assets_whitelist:
+            self.app_name.replace("/", "_")).joinpath(tag_name)
+        for asset in assets:
+            if asset in assets_whitelist:
                 files_to_download.append(asset)
-        # raise Exception(f"{files_to_download}?")
+
         if not any(files_to_download):
             raise Exception(
                 "No files matched the criteria to be Download."
@@ -528,20 +539,19 @@ FOR /L %%I IN (1,1,30) DO (
                 "\nFiles found: {}".format(
                     files_to_download,
                     assets_whitelist,
-                    [asset.name for asset in release.assets])
+                    assets)
             )
+
         # Check download folder exists
         if not os.path.exists(path=new_release_files_path):
             os.makedirs(new_release_files_path, exist_ok=True)
         elif not os.path.isdir(new_release_files_path):
             raise Exception("Downloads path ({}) is occupied by a file".format(new_release_files_path))
 
-        asset: GitReleaseAsset
         for asset in files_to_download:
             async with aiohttp.ClientSession() as session:
-                async with session.head(asset.browser_download_url, timeout=5, ssl=sslcontext) as resp:
+                async with session.head(f'{self.get_repo_releases_url()}/download/{tag_name}/{asset}', timeout=5, ssl=sslcontext) as resp:
                     if resp.status == 200:
-                        # print("OK!")
                         file = await aiofiles.open(file=f"{new_release_files_path}/{asset.name}")
                         await file.write(await resp.read())
                         await file.close()

@@ -10,8 +10,6 @@ from subprocess import DEVNULL
 from zipfile import ZipFile
 
 import psutil
-from github import GitRelease
-from github.GitReleaseAsset import GitReleaseAsset
 
 import functions
 from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
