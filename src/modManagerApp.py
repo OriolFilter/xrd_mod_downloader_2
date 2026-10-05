@@ -9,7 +9,7 @@ from textual.widgets import DataTable, Footer
 
 from Config import GlobalConfig
 from exceptions import XrdNotRunning
-from appBase import AppPublic
+from appBase import AppPublic, XrdBinaryPatcher
 
 NO = Text("No", style="#a83a32 bold")
 FALSE = NO
@@ -84,27 +84,35 @@ class ModManagerApp(App):
     # def action_search_updates_app(self):
     #     pass
 
-    def action_launch_mod(self):
+    async def action_launch_mod(self):
         app = self.selected_app
         app: AppPublic
-        if not app.is_installed:
-            self.notify(f"App {app.app_name} is not installed.\nInstall before launching.",
-                        severity="warning")
-        elif not app.can_be_launched:
-            # TODO check if dotnet is required/is installed
-            self.notify(f"Can't launch app {app.app_name}.\nEnsure the app is installed.",
-                        severity="error")
+        if issubclass(app.__class__, XrdBinaryPatcher):
+            await self.action_patch_mod()
         else:
-            try:
-                app.launch()
-                self.notify(f"Launched {app.app_name}.", severity="information")
-            except XrdNotRunning:
-                self.notify(f"Can't launch app {app.app_name}.\nXrdApp is not running.",
+            if not app.is_installed:
+                self.notify(f"App {app.app_name} is not installed.\nInstall before launching.",
+                            severity="warning")
+            elif not app.can_be_launched:
+                # TODO check if dotnet is required/is installed
+                # if issubclass(app.__class__, XrdBinaryPatcher):
+                #     self.notify(f"App {app.app_name} can't be launched, use the patch function instead to toggle "
+                #                 f"autostart with Xrd",
+                #                 severity="error")
+                # else:
+                self.notify(f"Can't launch app {app.app_name}.\nEnsure the app is installed.",
                             severity="error")
-            except Exception as e:
-                e: Exception
-                self.notify(f"Can't launch app {app.app_name}.\nType: '{e.__class__}'.\nMessage: {e.__str__()}",
-                            severity="error")
+            else:
+                try:
+                    app.launch()
+                    self.notify(f"Launched {app.app_name}.", severity="information")
+                except XrdNotRunning:
+                    self.notify(f"Can't launch app {app.app_name}.\nXrdApp is not running.",
+                                severity="error")
+                except Exception as e:
+                    e: Exception
+                    self.notify(f"Can't launch app {app.app_name}.\nType: '{e.__class__}'.\nMessage: {e.__str__()}",
+                                severity="error")
 
     def compose(self) -> ComposeResult:
         # Footer to show keys
@@ -164,7 +172,6 @@ class ModManagerApp(App):
         # Yield messages(?)
         self.notify(f"Mod {app.app_name} updated.")
         await self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "starts_at_boot"])
-
 
     async def action_patch_mod(self):
         app = self.selected_app
@@ -239,6 +246,8 @@ class ModManagerApp(App):
 
             for column in columns:
                 if app_info.get(column) is not Text:
-                    self.table.update_cell(value=app_info.get(column), row_key=row, column_key=column, update_width=True)
+                    self.table.update_cell(value=app_info.get(column), row_key=row, column_key=column,
+                                           update_width=True)
                 else:
-                    self.table.update_cell(value=Text(app_info.get(column) or UNKNOWN), row_key=row, column_key=column, update_width=True)
+                    self.table.update_cell(value=Text(app_info.get(column) or UNKNOWN), row_key=row, column_key=column,
+                                           update_width=True)
