@@ -562,11 +562,6 @@ FOR /L %%I IN (1,1,30) DO (
                             f"Failed to download the file {asset} from the release {tag_name}. "
                             f"Status code {resp.status}. "
                             f"Repository {self.repo_owner}/{self.repo_name}")
-                    # if asset.endswith(".zip"):
-                    #     with ZipFile(io.BytesIO(content)) as z:
-                    #         z.extractall(path=new_release_files_path)
-                    # #         # TODO only extract desired files
-                    # else:
                     async with aiofiles.open(file=f"{new_release_files_path}/{asset}", mode='wb+') as file:
                         await file.write(content)
             if asset.endswith(".zip"):
