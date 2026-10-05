@@ -11,6 +11,7 @@ from pathlib import Path
 from subprocess import DEVNULL
 from zipfile import ZipFile
 
+import aiofiles
 import aiohttp
 import psutil
 from github import GitRelease
@@ -443,6 +444,12 @@ FOR /L %%I IN (1,1,30) DO (
         return False
 
     async def _download_version(self, version_name: str) -> bool:
+        import certifi
+        import ssl
+        # Aiohttp can sometimes fail to very certs so this passes the device allowed certs issuers
+        sslcontext = ssl.create_default_context(cafile=certifi.where())
+
+        # TODO async
         # raise NotImplementedError(f"_download_version {self.__class__}")
         # release: GitRelease = ...  # TODO send curl, get version -> generate GitRelease object
         release: GitRelease = self._config.github_client.get_repo(self.app_name).get_release(version_name)
@@ -472,16 +479,22 @@ FOR /L %%I IN (1,1,30) DO (
         elif not os.path.isdir(new_release_files_path):
             raise Exception("Downloads path ({}) is occupied by a file".format(new_release_files_path))
 
+        asset: GitReleaseAsset
         for asset in files_to_download:
-            asset: GitReleaseAsset
-            asset.download_asset(path=f"{new_release_files_path}/{asset.name}")
+            async with aiohttp.ClientSession() as session:
+                async with session.head(asset.browser_download_url, timeout=5, ssl=sslcontext) as resp:
+                    if resp.status == 200:
+                        # print("OK!")
+                        file = await aiofiles.open(file=f"{new_release_files_path}/{asset.name}")
+                        await file.write(await resp.read())
+                        await file.close()
 
-        # # For each zip unzip
-        for file in files_to_download:
-            if file.name.endswith(".zip"):
-                with ZipFile(f"{new_release_files_path}/{file.name}") as z:
-                    z.extractall(path=new_release_files_path)
-                    # TODO only extract desired files
+        # # # For each zip unzip
+        # for file in files_to_download:
+        #     if file.name.endswith(".zip"):
+        #         with ZipFile(f"{new_release_files_path}/{file.name}") as z:
+        #             z.extractall(path=new_release_files_path)
+        #             # TODO only extract desired files
         return True
 
     def get_assets_whitelist(self, tag: str) -> [str]:
@@ -667,7 +680,6 @@ class GithubApp(AppStruct, ABC):
                     latest_url = resp.headers.get("Location")
                     if resp.status and any(latest_url) and latest_url.startswith(
                             f"https://github.com/{self.repo_owner}/{self.repo_name}/releases/tag/"):
-                        print("OK!")
                         latest_tag = latest_url.removeprefix(
                             f"https://github.com/{self.repo_owner}/{self.repo_name}/releases/tag/")
                         if latest_tag:

@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 from github.GitRelease import GitRelease
 from rich.text import Text
@@ -163,6 +164,7 @@ class ModManagerApp(App):
         # Yield messages(?)
         self.notify(f"Mod {app.app_name} updated.")
         await self.__update_set_values(rows=app.app_name, columns=["tag_name", "installed", "starts_at_boot"])
+
 
     async def action_patch_mod(self):
         app = self.selected_app
