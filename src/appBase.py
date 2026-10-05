@@ -299,7 +299,7 @@ class InjectorApp(GithubApp, ABC):
         boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
         with open(boot_xrd_path, 'r', encoding="utf-8") as boot_xrd_file:
             for line in boot_xrd_file.readlines():
-                if line.startswith(f"start {self._bat_file_name}"):
+                if line.startswith(f"start /MIN {self._bat_file_name}"):
                     return True
         return False
 
@@ -452,7 +452,7 @@ exit
                     append_to_boot_xrd = False
             # Append boot.bat
             if append_to_boot_xrd:
-                new_file_contents.append(f"start {self._bat_file_name}\n")
+                new_file_contents.append(f"start /MIN {self._bat_file_name}\n")
 
         with open(boot_xrd_path, "w", encoding="utf-8") as file:
             file.writelines(new_file_contents)
