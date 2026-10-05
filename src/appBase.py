@@ -413,7 +413,7 @@ FOR /L %%I IN (1,1,30) DO (
   %CHECK_XRD% && goto :finish || (ping -n 2 127.0.0.1 > NU)
 )
 :finish
-%CHECK_XRD% && cd {app_directory} && ping 127.0.0.1 -n 1 > nul && start /MIN {executable_name} {extra_args}
+%CHECK_XRD% && cd {app_directory} && ping 127.0.0.1 -n 10 > nul && start /MIN {executable_name} {extra_args}
 
 exit
 """.format(
