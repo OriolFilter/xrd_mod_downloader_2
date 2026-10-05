@@ -413,7 +413,9 @@ FOR /L %%I IN (1,1,30) DO (
   %CHECK_XRD% && goto :finish || (ping -n 2 127.0.0.1 > NU)
 )
 :finish
-%CHECK_XRD% && cd {app_directory} && start /MIN {executable_name} {extra_args} || echo Xrd didn't launch...
+%CHECK_XRD% && cd {app_directory} && start /MIN {executable_name} {extra_args}
+
+exit
 """.format(
             app_directory=self.app_name.replace("/", "_"),
             executable_name=self._executable_name,
@@ -439,9 +441,9 @@ FOR /L %%I IN (1,1,30) DO (
                 if any(self._executable_name) and line.startswith(self._executable_name):
                     # Comment "old"/original method of patching
                     new_file_contents.append(f":: {line}")
-                elif any(self._bat_file_name) and line.startswith(f":: start {self._bat_file_name}"):
+                elif any(self._bat_file_name) and line.startswith(f"REM start /MIN {self._bat_file_name}"):
                     # If bat exists but is commented uncomment
-                    new_file_contents.append(f"start {self._bat_file_name}\n")
+                    new_file_contents.append(f"start /MIN {self._bat_file_name}\n")
                 else:
                     new_file_contents.append(line)
 
