@@ -798,7 +798,7 @@ class XrdBinaryPatcher(AppStruct, abc.ABC):
 
     @property
     def tag_name(self) -> str:
-        return "N/A"
+        return "----"
 
     @tag_name.setter
     def tag_name(self, tag_name: str):

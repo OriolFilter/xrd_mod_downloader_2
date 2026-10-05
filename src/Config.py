@@ -26,22 +26,19 @@ class GlobalConfig:
                    description="Required to launch the Reversal Tool"),
 
             HitboxOverlay(repo_name="ggxrd_hitbox_overlay_2211",
-                           repo_owner="kkots",
-                           description="Hitbox/framedata viewer mod",
-                           _config=self),
+                          repo_owner="kkots",
+                          description="Hitbox/framedata viewer mod",
+                          _config=self),
 
             WakeUpTool(repo_name="rev2-wakeup-tool", repo_owner="kkots", _config=self),
 
             ReplayTakeover(repo_name="GGXrdReplayTakeover", repo_owner="ibrow19", _config=self),
 
-            GGXrdBackgroundGamepad(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots", _config=self),
-            GGXrdFasterLoadingTimes(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", _config=self),
-
             GGXrdFreeCam(repo_name="ggxrd_freecam", repo_owner="kkots",
-                         _config=self, description="Camera free movement unlock mod.",),
+                         _config=self, description="Camera free movement unlock mod.", ),
 
             GGXrdDisplayPing(repo_name="GGXrdDisplayPing", repo_owner="kkots", _config=self,
-                                 description="Display room's Ping"),
+                             description="Display room's Ping"),
 
             GGXrdVersionSelector(repo_name="GGXrdVersionSelector", repo_owner="kkots", _config=self),
 
@@ -52,8 +49,14 @@ class GlobalConfig:
             # AppStruct(repo_name="GGXrdMirrorColorSelect", repo_owner="kkots", _config=self),
             # GGXrdChangeBorderlessWindowPos idk about this one
             # https://github.com/kkots/GGXrdAutomaticallyChangeAudioDevice
-            # https://github.com/kkots/GGXrdDisplayPing
             # https://github.com/kkots/GGXrdAdjustConnectionTiers  idk about this one
+
+            # Binary Patchers
+            GGXrdBackgroundGamepad(repo_name="GGXrdBackgroundGamepad", repo_owner="kkots", _config=self),
+            GGXrdFasterLoadingTimes(repo_name="GGXrdFasterLoadingTimes", repo_owner="kkots", _config=self),
+            GGXrdStopResettingINITwiceAYear(repo_name="GGXrdStopResettingINITwiceAYear", repo_owner="kkots",
+                                            _config=self),
+
         ]
 
         match sys.platform:

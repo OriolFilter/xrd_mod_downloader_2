@@ -20,6 +20,10 @@ from FasterLoadingTimes.patch_unpatch import (patch as fasterLoadingTimes_patch,
                                               is_patched as fasterLoadingTimes_is_patched,
                                               unpatch as fasterLoadingTimes_unpatch)
 
+from StopResettingINITwiceAYear.patch_unpatch import (patch as stopResettingINITwiceAYear_patch,
+                                                      is_patched as stopResettingINITwiceAYear_is_patched,
+                                                      unpatch as stopResettingINITwiceAYear_unpatch)
+
 
 # from Config import GlobalConfig
 
@@ -587,3 +591,18 @@ class GGXrdFasterLoadingTimes(XrdBinaryPatcher):
                                  automash=True,
                                  intro_movies_skip_mode="skip_automatically",
                                  fix_bug_that_causes_ini_file_to_reset_twice_a_year_in_countries_with_daylight_saving=True)
+
+
+class GGXrdStopResettingINITwiceAYear(XrdBinaryPatcher):
+    def _disable_patch(self):
+        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        return stopResettingINITwiceAYear_unpatch(str(xrd_exe_path))
+
+    def _is_binary_patched(self) -> bool:
+        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        return stopResettingINITwiceAYear_is_patched(str(xrd_exe_path))
+
+    def _patch(self):
+        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        # TODO add a picker to select options/stuff
+        stopResettingINITwiceAYear_patch(str(xrd_exe_path))

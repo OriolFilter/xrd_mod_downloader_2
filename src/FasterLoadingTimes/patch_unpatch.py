@@ -1265,21 +1265,21 @@ def patch(guilty_gear_xrd_exe_path: str, automash: bool, intro_movies_skip_mode:
                     return False
                 if debug:
                     print(f"CreateFileW_offset (raw): {stuff.CreateFileW_offset:#x}")
-                stuff.GetFileTime_offset = find_imported_function("kernel32.dll", b"GetFileTime");
+                stuff.GetFileTime_offset = find_imported_function("kernel32.dll", b"GetFileTime")
                 if stuff.GetFileTime_offset == -1:
                     if debug:
                         print("GetFileTime not found.")
                     return False
                 if debug:
                     print(f"GetFileTime_offset (raw): {stuff.GetFileTime_offset:#x}")
-                stuff.CloseHandle_offset = find_imported_function("kernel32.dll", b"CloseHandle");
+                stuff.CloseHandle_offset = find_imported_function("kernel32.dll", b"CloseHandle")
                 if stuff.CloseHandle_offset == -1:
                     if debug:
                         print("CloseHandle not found.")
                     return False
                 if debug:
                     print(f"CloseHandle_offset (raw): {stuff.CloseHandle_offset:#x}")
-                stuff.GetFileAttributesW_offset = find_imported_function("kernel32.dll", b"GetFileAttributesW");
+                stuff.GetFileAttributesW_offset = find_imported_function("kernel32.dll", b"GetFileAttributesW")
                 if stuff.GetFileAttributesW_offset == -1:
                     if debug:
                         print("GetFileAttributesW not found.")
