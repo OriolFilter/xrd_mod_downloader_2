@@ -144,6 +144,11 @@ class ModManagerApp(App):
         app = self.selected_app
         # TODO check if its already download, skipp download if exists
         # self.notify(f"Starting update.\nApp: {app.app_name}\nRelease: {app.latest_release_name}",
+        if not app.downloadeable:
+            self.notify(f"App {app.app_name} doesn't allow for downloads.",
+                        severity="error")
+
+            return
         self.notify(f"Starting update.\nApp: {app.app_name}.",
                     severity="warning")
         async with asyncio.TaskGroup() as tg:

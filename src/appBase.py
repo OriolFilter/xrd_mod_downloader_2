@@ -27,6 +27,8 @@ class AppPublic(ABC):
     This is an empty class that's only used to represent the methods available "externally"
     """
 
+    downloadeable = True  # Default value. Disable for Binary patchers
+
     @property
     @abstractmethod
     def app_name(self) -> str:
@@ -791,6 +793,8 @@ class XrdBinaryPatcher(AppStruct, abc.ABC):
 
     This only allows to patch/unpatch
     """
+
+    downloadeable = False
 
     @property
     def tag_name(self) -> str:
