@@ -28,7 +28,7 @@ from StopResettingINITwiceAYear.patch_unpatch import (patch as stopResettingINIT
 # from Config import GlobalConfig
 
 
-class GenericGithubApp(InjectorApp, GithubApp):
+class GenericGithubApp(InjectorApp):
     """
     Used as placeholder, sometimes.
     """

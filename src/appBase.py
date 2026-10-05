@@ -225,8 +225,52 @@ class AppStruct(AppPublic, ABC):
     def current_version_files_path(self) -> Path:
         return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(self.tag_name)
 
+class GithubApp(AppStruct, ABC):
+    """
+    Used by apps that use Github as their source.
+    """
 
-class InjectorApp(AppStruct, ABC):
+    __latest_release_available: GitRelease = None
+
+    def get_repo_url(self) -> str:
+        return "https://github.com/{}/{}".format(self.repo_owner, self.repo_name)
+
+    def get_api_repo_url(self) -> str:
+        return "https://api.github.com/repos/{}/{}".format(self.repo_owner, self.repo_name)
+
+    # @property
+    # def latest_release(self) -> GitRelease:
+    #     if not self.__latest_release_available:
+    #         self.__latest_release_available = self._config.github_client.get_repo(self.app_name).get_latest_release()
+    #     return self.__latest_release_available
+
+    async def _get_latest_version_name(self) -> str:
+        if not self._latest_version_name:
+            import certifi
+            import ssl
+
+            url = f"{self.get_repo_url()}/releases/latest"
+
+            # Aiohttp can sometimes fail to very certs so this passes the device allowed certs issuers
+            sslcontext = ssl.create_default_context(cafile=certifi.where())
+
+            async with aiohttp.ClientSession() as session:
+                async with session.head(url, timeout=5, ssl=sslcontext) as resp:
+                    latest_url = resp.headers.get("Location")
+                    if resp.status and any(latest_url) and latest_url.startswith(
+                            f"{self.get_repo_url()}/releases/tag/"):
+                        latest_tag = latest_url.removeprefix(
+                            f"{self.get_repo_url()}/releases/tag/")
+                        if latest_tag:
+                            return latest_tag
+        return self._latest_version_name
+
+    # def fetch_releases_available(self) -> None:
+    #     cli = Github()
+    #     self.release_available = cli.get_repo(self.app_name).get_releases()
+
+
+class InjectorApp(GithubApp, ABC):
     """
     Used by apps that require injection
     """
@@ -456,13 +500,13 @@ FOR /L %%I IN (1,1,30) DO (
         # Get github repository:
         # repo = github.Repository()
 
-        # async with aiohttp.ClientSession() as session:
-        #     async with session.head({self.get_repo_url(), timeout=5, ssl=sslcontext) as resp:
-        #         if resp.status == 200:
-        #             # print("OK!")
-        #             file = await aiofiles.open(file=f"{new_release_files_path}/{asset.name}")
-        #             await file.write(await resp.read())
-        #             await file.close()
+        async with aiohttp.ClientSession() as session:
+            async with session.head(self.get_api_repo_url(), timeout=5, ssl=sslcontext) as resp:
+                if resp.status == 200:
+                    # print("OK!")
+                    file = await aiofiles.open(file=f"{new_release_files_path}/{asset.name}")
+                    await file.write(await resp.read())
+                    await file.close()
 
 
         release: GitRelease = self._config.github_client.get_repo(self.app_name).get_release(version_name)
@@ -657,51 +701,6 @@ FOR /L %%I IN (1,1,30) DO (
         :return:
         """
         pass
-
-
-class GithubApp(AppStruct, ABC):
-    """
-    Used by apps that use Github as their source.
-    """
-
-    __latest_release_available: GitRelease = None
-
-    def get_repo_url(self) -> str:
-        return "https://github.com/{}/{}".format(self.repo_owner, self.repo_name)
-
-    def get_api_repo_url(self) -> str:
-        return "https://api.github.com/repos/{}/{}".format(self.repo_owner, self.repo_name)
-
-    # @property
-    # def latest_release(self) -> GitRelease:
-    #     if not self.__latest_release_available:
-    #         self.__latest_release_available = self._config.github_client.get_repo(self.app_name).get_latest_release()
-    #     return self.__latest_release_available
-
-    async def _get_latest_version_name(self) -> str:
-        if not self._latest_version_name:
-            import certifi
-            import ssl
-
-            url = f"{self.get_repo_url()}/releases/latest"
-
-            # Aiohttp can sometimes fail to very certs so this passes the device allowed certs issuers
-            sslcontext = ssl.create_default_context(cafile=certifi.where())
-
-            async with aiohttp.ClientSession() as session:
-                async with session.head(url, timeout=5, ssl=sslcontext) as resp:
-                    latest_url = resp.headers.get("Location")
-                    if resp.status and any(latest_url) and latest_url.startswith(
-                            f"{self.get_repo_url()}/releases/tag/"):
-                        latest_tag = latest_url.removeprefix(
-                            f"{self.get_repo_url()}/releases/tag/")
-                        if latest_tag:
-                            return latest_tag
-        return self._latest_version_name
-
-    # def fetch_releases_available(self) -> None:
-    #     cli = Github()
-    #     self.release_available = cli.get_repo(self.app_name).get_releases()
 
 
 class StandAloneExeRequirement(InjectorApp, ABC):
