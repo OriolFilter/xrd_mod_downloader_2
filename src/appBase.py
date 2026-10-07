@@ -194,6 +194,10 @@ class AppStruct(AppPublic, ABC):
     @property
     @abstractmethod
     def starts_at_boot(self) -> bool:
+        """
+        If currently is configured/set to start at boot of Xrd, different mods/tools/classes will require different checks.
+        :return:
+        """
         raise NotImplementedError
 
     @property
@@ -351,7 +355,7 @@ class GithubApp(AppStruct, ABC):
         return self._get_assets_whitelist(tag)
 
     def _get_assets_whitelist(self, tag: str) -> [str]:
-        raise NotImplementedError("_download_app for app {}".format(self.__class__))
+        raise NotImplementedError("_get_assets_whitelist for app {}".format(self.__class__))
 
     # def fetch_releases_available(self) -> None:
     #     cli = Github()

@@ -606,26 +606,38 @@ class GGXrdStopResettingINITwiceAYear(XrdBinaryPatcher):
         stopResettingINITwiceAYear_patch(str(xrd_exe_path))
 
 
-# class XrdStartupLauncher(GithubApp):
-#     async def _download_version(self, version: str) -> bool:
-#         pass
-#
-#     @property
-#     def starts_at_boot(self) -> bool:
-#         pass
-#
-#     @property
-#     async def is_up_to_date(self) -> bool:
-#         pass
-#
-#     @property
-#     def is_installed(self) -> bool:
-#         pass
-#
-#     @property
-#     def can_be_launched(self) -> bool:
-#         pass
-#
-#     @property
-#     def _executable_name(self) -> str:
-#         return "placeholder.exe"
+class BinaryThatStartsWithXrd(GithubApp):
+    """
+    Binary that's only supposed to be launched when xrd starts.
+    """
+
+    @property
+    def starts_at_boot(self) -> bool:
+        return False
+
+    @property
+    async def is_up_to_date(self) -> bool:
+        return False
+
+    @property
+    def is_installed(self) -> bool:
+        # raise Exception(self.get_repo_url())
+        return False
+
+    @property
+    def can_be_launched(self) -> bool:
+        return False
+
+    def _get_assets_whitelist(self, tag: str) -> [str]:
+        return [self._executable_name]
+
+    @property
+    @abstractmethod
+    def _executable_name(self) -> str:
+        pass
+
+
+class XrdStartupLauncher(BinaryThatStartsWithXrd):
+    @property
+    def _executable_name(self) -> str:
+        return "xrd_startup_launcher.exe"
