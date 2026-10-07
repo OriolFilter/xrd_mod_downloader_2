@@ -268,6 +268,22 @@ class AppStruct(AppPublic, ABC):
     def current_version_files_path(self) -> Path:
         return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(self.tag_name)
 
+    @property
+    def _xrd_launcher_configured_apps(self) -> [{str: str}]:
+        with open(self._xrd_launcher_path, 'r', encoding="utf-8") as json_file:
+            contents = json_file.read()
+            if len(contents) == 0:
+                return []
+            return json.loads(contents)
+
+    @property
+    def _xrd_launcher_path(self) -> Path:
+        """
+        Returns the path of the Xrd launcher
+        :return:
+        """
+        return self._config._win32_directory_path.joinpath("xrd_executable_list.json")
+
 
 class GithubApp(AppStruct, ABC):
     """
@@ -431,20 +447,6 @@ class InjectorApp(GithubApp, ABC):
     """
 
     @property
-    def _bat_file_enabled(self) -> bool:
-        """
-        Checks if the app.bat file is uncommented/ready
-        :return:
-        """
-        boot_xrd_bat = "BootGGXrd.bat"
-        boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
-        with open(boot_xrd_path, 'r', encoding="utf-8") as boot_xrd_file:
-            for line in boot_xrd_file.readlines():
-                if line.startswith(f"start /MIN {self._bat_file_name}"):
-                    return True
-        return False
-
-    @property
     def starts_at_boot(self) -> bool:
         # @property
         # @abstractmethod
@@ -463,8 +465,23 @@ class InjectorApp(GithubApp, ABC):
         """
 
         return any(self._config.xrd_path) and (
-                (self._bat_file_enabled and self._patch_files_exists) or self._is_binary_patched)
+                (self._xrd_launcher_entry_exists and self._patch_files_exists) or self._is_binary_patched)
 
+    @property
+    def _xrd_launcher_entry_exists(self) -> bool:
+        """
+        Checks if the app has an entry for the xrd startup launcher tool.
+        :return:
+        """
+        xrd_launcher_json = self._xrd_launcher_path
+        if xrd_launcher_json.exists() and xrd_launcher_json.is_file():
+            for app in self._xrd_launcher_configured_apps:
+                app: dict
+                if app.get("mod_name") == self.app_name:
+                    return True
+        return False
+
+    # TODO / update
     @property
     def _patch_files_exists(self) -> bool:
         """
@@ -476,11 +493,6 @@ class InjectorApp(GithubApp, ABC):
         files_to_contain = [
             boot_xrd_bat,
         ]
-
-        # Check .bat exists
-        bat_path = self._config._win32_directory_path.joinpath(self._bat_file_name)
-        if not (bat_path.exists() and bat_path.is_file()):
-            return False
 
         # Check App.bat (and other files) exists (we are not checking contents anyway)
         for file in files_to_contain:
@@ -508,12 +520,10 @@ class InjectorApp(GithubApp, ABC):
         This assumes that the file exists, contents are readable etc, checks are out of the scope of this function.
         :return:
         """
-        xrd_launcher_json: Path = self._config._win32_directory_path.joinpath("xrd_executable_list.json")
+        xrd_launcher_json: Path = self._xrd_launcher_path
 
-        json_values: [{str: str}] = []
+        json_values: [{str: str}] = self._xrd_launcher_configured_apps
         new_json_values: [{str: str}] = []
-        with open(xrd_launcher_json, 'r', encoding="utf-8") as json_file:
-            json_values = json.loads(json_file.read())
 
         for app in json_values:
             app: dict
@@ -544,17 +554,12 @@ class InjectorApp(GithubApp, ABC):
                 raise Exception(f"File '{source_file_path}' couldn't be found.")
 
         # Create xrd_executable_list.json if doesn't exist
-        xrd_launcher_json: Path = self._config._win32_directory_path.joinpath("xrd_executable_list.json")
+        xrd_launcher_json: Path = self._xrd_launcher_path
 
         json_values: [{str: str}] = []
         new_json_values: [{str: str}] = []
         if xrd_launcher_json.is_file():
-            with open(xrd_launcher_json, 'r', encoding="utf-8") as json_file:
-                _json_contents = json_file.read()
-                # raise Exception(_json_contents)
-                if len(_json_contents) > 0:
-                    json_values = json.loads(_json_contents)
-            del _json_contents
+            json_values = self._xrd_launcher_configured_apps
 
         elif xrd_launcher_json.exists() and not xrd_launcher_json.is_file():
             raise Exception(f"Path {xrd_launcher_json} is occupied by something that's not a file.")
