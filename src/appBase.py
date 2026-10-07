@@ -29,6 +29,7 @@ class AppPublic(ABC):
     """
 
     downloadeable = True  # Default value. Disable for Binary patchers
+    start_at_boot_requires_xrd_startup_launcher = True
 
     @property
     @abstractmethod
@@ -733,6 +734,8 @@ class StandAloneExeRequirement(InjectorApp, ABC):
     Ie, dotnet or visual redistributable
     """
 
+    start_at_boot_requires_xrd_startup_launcher = False
+
     # TODO shouldn't need Xrd to be running
 
     @property
@@ -852,6 +855,7 @@ class XrdBinaryPatcher(AppStruct, abc.ABC):
     """
 
     downloadeable = False
+    start_at_boot_requires_xrd_startup_launcher = False
 
     @property
     def tag_name(self) -> str:

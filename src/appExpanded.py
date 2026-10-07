@@ -47,7 +47,7 @@ class GenericGithubApp(InjectorApp):
         raise NotImplementedError("_get_assets_whitelist for app {}".format(self.__class__))
 
 
-class WakeUpTool(InjectorApp, GithubApp):
+class WakeUpTool(InjectorApp):
 
     @property
     def _key_dll(self) -> str:
@@ -111,7 +111,7 @@ class WakeUpTool(InjectorApp, GithubApp):
         return False
 
 
-class ReplayTakeover(InjectorApp, GithubApp):
+class ReplayTakeover(InjectorApp):
 
     @property
     def _key_dll(self) -> str:
@@ -133,7 +133,7 @@ class ReplayTakeover(InjectorApp, GithubApp):
         return assets_whitelist
 
 
-class GGXrdDisplayPing(InjectorApp, GithubApp):
+class GGXrdDisplayPing(InjectorApp):
 
     @property
     def _key_dll(self) -> str:
@@ -189,7 +189,7 @@ class GGXrdDisplayPing(InjectorApp, GithubApp):
         return ["-force"]
 
 
-class GGXrdVersionSelector(InjectorApp, GithubApp):
+class GGXrdVersionSelector(InjectorApp):
 
     @property
     def _key_dll(self) -> str:
@@ -235,7 +235,7 @@ class GGXrdVersionSelector(InjectorApp, GithubApp):
         return assets_whitelist
 
 
-class HitboxOverlay(InjectorApp, GithubApp):
+class HitboxOverlay(InjectorApp):
     @property
     def _key_dll(self) -> str:
         return "ggxrd_hitbox_overlay.dll"
@@ -310,7 +310,7 @@ class HitboxOverlay(InjectorApp, GithubApp):
         return ["-force"]
 
 
-class GGXrdFreeCam(InjectorApp, GithubApp):
+class GGXrdFreeCam(InjectorApp):
     @property
     def _key_dll(self) -> str:
         return "ggxrd_freecam_dll.dll"
@@ -610,6 +610,8 @@ class BinaryThatStartsWithXrd(InjectorApp):
     """
     Binary that's only supposed to be launched when xrd starts.
     """
+
+    start_at_boot_requires_xrd_startup_launcher = False
 
     @property
     def _boot_xrd_enabled(self) -> bool:
