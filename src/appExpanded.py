@@ -679,8 +679,8 @@ class BinaryThatStartsWithXrd(GithubApp):
 
         # Copy files
         # TODO move to pre-patch checks / postpatch create/move files
-        if not self._win32_mod_folder_path.exists():
-            self._win32_mod_folder_path.mkdir(parents=True)
+        # if not self._win32_mod_folder_path.exists():
+        #     self._win32_mod_folder_path.mkdir(parents=True)
 
         # # Check DelayApp.bat
         # bat_file_path = Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(self._bat_file_name)
