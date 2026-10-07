@@ -91,6 +91,13 @@ class AppPublic(ABC):
         """
         pass
 
+    @abstractmethod
+    async def disable_patch(self):
+        """
+        Disable "Start With Xrd"
+        :return:
+        """
+
 
 @dataclasses.dataclass
 class AppStruct(AppPublic, ABC):
@@ -226,6 +233,20 @@ class AppStruct(AppPublic, ABC):
             "tag_name": self.tag_name,
         }
 
+    @abstractmethod
+    def _patch(self):
+        pass
+
+    async def patch(self):
+        self._patch()
+
+    async def disable_patch(self):
+        self._disable_patch()
+
+    @abstractmethod
+    def _disable_patch(self):
+        pass
+
     def _unpatch_binary(self):
         """
         Can be used/implemented to unpatch the .exe or doing whatever.
@@ -344,7 +365,7 @@ class GithubApp(AppStruct, ABC):
         for asset in files_to_download:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f'{self.get_repo_releases_url()}/download/{tag_name}/{asset}', timeout=5,
-                                        ssl=sslcontext, allow_redirects=True) as resp:
+                                       ssl=sslcontext, allow_redirects=True) as resp:
                     content = await resp.read()
                     if resp.status != 200:
                         raise Exception(
@@ -462,21 +483,12 @@ class InjectorApp(GithubApp, ABC):
                 return False
         return True
 
-    async def patch(self):
-        self._patch()
-
     # async def toggle_patch(self):
     #     """Toggle start on boot for the mod"""
     #     if self._is_binary_patched:
     #         self._unpatch_binary()
     #
     #     self._disable_patch()
-
-    async def disable_patch(self):
-        if self._is_binary_patched:
-            self._unpatch_binary()
-        if self._bat_file_enabled:
-            self._disable_patch()
 
     def _disable_patch(self):
         """
@@ -736,6 +748,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
     Apps that require to run a .exe unrelated to mods and such.
     Ie, dotnet or visual redistributable
     """
+
     # TODO shouldn't need Xrd to be running
 
     @property
@@ -829,7 +842,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
 
         return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_"))
 
-    def patch(self):
+    def _patch(self):
         # IDK if I should be passing the extra args but
         # TODO check again
         self._launch(self._launch_extra_args)
@@ -907,9 +920,6 @@ class XrdBinaryPatcher(AppStruct, abc.ABC):
         if self._is_binary_patched():
             raise Exception(f"{XrdBinaryPatcher.__class__} is already patched. Skipping...")
         self._patch()
-
-    async def disable_patch(self):
-        self._disable_patch()
 
     @property
     def is_installed(self) -> bool:

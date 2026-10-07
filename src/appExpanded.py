@@ -647,8 +647,12 @@ class BinaryThatStartsWithXrd(GithubApp):
                 return False
         return True
 
+    def _disable_patch(self):
+        pass
+
 
 class XrdStartupLauncher(BinaryThatStartsWithXrd):
+
     @property
     def _executable_name(self) -> str:
         return "xrd_startup_launcher.exe"
