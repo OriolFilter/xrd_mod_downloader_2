@@ -98,6 +98,15 @@ class AppPublic(ABC):
         :return:
         """
 
+    @abstractmethod
+    def launch(self) -> None:
+        """
+        Launch the respective mod/tool/etc.
+        Some might not make use of it.
+        :return:
+        """
+        pass
+
 
 @dataclasses.dataclass
 class AppStruct(AppPublic, ABC):

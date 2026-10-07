@@ -606,14 +606,64 @@ class GGXrdStopResettingINITwiceAYear(XrdBinaryPatcher):
         stopResettingINITwiceAYear_patch(str(xrd_exe_path))
 
 
-class BinaryThatStartsWithXrd(GithubApp):
+class BinaryThatStartsWithXrd(InjectorApp):
     """
     Binary that's only supposed to be launched when xrd starts.
     """
 
     @property
-    def starts_at_boot(self) -> bool:
+    def _boot_xrd_enabled(self) -> bool:
+        """
+        Checks if the app.bat file is uncommented/ready
+        :return:
+        """
+        boot_xrd_bat = "BootGGXrd.bat"
+        boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
+        with open(boot_xrd_path, 'r', encoding="utf-8") as boot_xrd_file:
+            for line in boot_xrd_file.readlines():
+                if line.startswith(f"start /MIN {self._executable_name}"):
+                    return True
         return False
+
+    @property
+    def starts_at_boot(self) -> bool:
+        # @property
+        # @abstractmethod
+        # def starts_at_boot(self) -> bool:
+        """
+        Whether if mod/app is considered to start at Xrd boot.
+
+        If xrd_path is not populated/found forces a False.
+
+        Condition is (if "BootGGXrd.bat" is configured and files exist) return true/false.
+        :return:
+        """
+
+        return any(self._config.xrd_path) and (
+                (self._boot_xrd_enabled and self._required_files_exist) or self._is_binary_patched)
+
+    @property
+    def _required_files_exist(self) -> bool:
+        """
+        Check if the required files at the Xrd/Binaries/Win32 directory
+        :return:
+        """
+
+        # Check .bat exists
+        workdir = Path(self._config.xrd_path).joinpath("Binaries/Win32")
+        if not (workdir.exists() and workdir.is_dir()):
+            return False
+
+        # Check files exist (we are not checking contents anyway)
+        for file in self._required_files:
+            file_path = workdir.joinpath(file)
+            if not (file_path.exists() and file_path.is_file()):
+                return False
+        for file in self._required_files:
+            file_path = self._win32_mod_folder_path.joinpath(file)
+            if not (file_path.exists() and file_path.is_file()):
+                return False
+        return True
 
     @property
     async def is_up_to_date(self) -> bool:
@@ -729,6 +779,16 @@ class BinaryThatStartsWithXrd(GithubApp):
         :return:
         """
         return Path(self._config.xrd_path).joinpath("Binaries/Win32/")
+
+    @property
+    def _key_dll(self) -> str:
+        """
+        No DLL to keep track of
+        :return:
+        """
+        return ""
+
+    # TODO make launch possible, using the workdir from the Xrd Binary folder
 
 
 class XrdStartupLauncher(BinaryThatStartsWithXrd):
