@@ -95,6 +95,9 @@ class GlobalConfig:
     def get_app(self, app_name: str) -> AppStruct:
         return self.mod_dict.get(app_name, None)
 
+    def get_startup_launcher_app(self) -> AppStruct:
+        return self.get_app("OriolFilter/xrd_startup_launcher")
+
     @property
     def workdir(self) -> str:
         # return "/tmp/a"
