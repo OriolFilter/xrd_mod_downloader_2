@@ -19,7 +19,7 @@ from github import GitRelease
 import functions
 from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
 import json
-
+from re import sub as resub
 
 # from async_property import async_property
 
@@ -544,11 +544,10 @@ class InjectorApp(GithubApp, ABC):
 
         elif xrd_launcher_json.exists() and not xrd_launcher_json.is_file():
             raise Exception(f"Path {xrd_launcher_json} is occupied by something that's not a file.")
-
         # Load config
         this_app_values = {
             "mod_name": self.app_name,
-            "workdir": self._win32_mod_directory_path.__str__().lstrip(self._config._win32_directory_path.__str__()),
+            "workdir": resub('^' + self._config._win32_directory_path.__str__() + '/', '',  self._win32_mod_directory_path.__str__()),
             "executable_path": self._executable_name,
             "arguments": self._launch_extra_args,
             "delay": 1  # TODO harcoded
