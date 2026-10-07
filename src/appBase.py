@@ -504,27 +504,30 @@ class InjectorApp(GithubApp, ABC):
     def _disable_patch(self):
         """
         Find self.bat in BootXRD.bat and comment it.
+
+        This assumes that the file exists, contents are readable etc, checks are out of the scope of this function.
         :return:
         """
-        boot_xrd_bat = "BootGGXrd.bat"
-        boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
-        new_file_contents: [str] = []
-        with open(boot_xrd_path, 'r', encoding="utf-8") as file:
-            for line in file:
-                if any(self._bat_file_name) and line.startswith(f"start /MIN {self._bat_file_name}"):
-                    new_file_contents.append(f"REM start /MIN {self._bat_file_name}\n")
-                # elif len(self._bat_file_name) > 0 and line.startswith(f"REM {self._bat_file_name}"):
-                #     new_file_contents.append(f"{self._bat_file_name}\n")
-                else:
-                    new_file_contents.append(line)
+        xrd_launcher_json: Path = self._config._win32_directory_path.joinpath("xrd_executable_list.json")
 
-        with open(boot_xrd_path, "w", encoding="utf-8") as file:
-            file.writelines(new_file_contents)
+        json_values: [{str: str}] = []
+        new_json_values: [{str: str}] = []
+        with open(xrd_launcher_json, 'r', encoding="utf-8") as json_file:
+            json_values = json.loads(json_file.read())
 
-    # TODO remove
+        for app in json_values:
+            app: dict
+            if app.get("mod_name") != self.app_name:
+                new_json_values.append(app)
+
+        with open(xrd_launcher_json, 'w+', encoding="utf-8") as file:
+            file.write(json.dumps(new_json_values))
+
     def _patch(self):
         """
+        Moves the files to the own mod directory in the located in Xrd/Binaries/Win32.
 
+        Adds an entry to the file "xrd_executable_list.json" to be launched at startup.
         :return:
         """
         # Check if directory exists || create
@@ -545,14 +548,15 @@ class InjectorApp(GithubApp, ABC):
 
         json_values: [{str: str}] = []
         new_json_values: [{str: str}] = []
-        if xrd_launcher_json.exists() and xrd_launcher_json.is_file():
+        if xrd_launcher_json.is_file():
             with open(xrd_launcher_json, 'r', encoding="utf-8") as json_file:
                 _json_contents = json_file.read()
-                if any(_json_contents) and _json_contents != b"[]" and _json_contents == b"[]\n":
-                    json_values = json.loads(json_file.read())
+                # raise Exception(_json_contents)
+                if len(_json_contents) > 0:
+                    json_values = json.loads(_json_contents)
             del _json_contents
 
-        elif not xrd_launcher_json.is_file():
+        elif xrd_launcher_json.exists() and not xrd_launcher_json.is_file():
             raise Exception(f"Path {xrd_launcher_json} is occupied by something that's not a file.")
 
         # Load config
@@ -577,6 +581,8 @@ class InjectorApp(GithubApp, ABC):
 
         if append_values:
             new_json_values.append(this_app_values)
+
+        # raise Exception(json_values)
 
         with open(xrd_launcher_json, 'w+', encoding="utf-8") as file:
             file.write(json.dumps(new_json_values))
