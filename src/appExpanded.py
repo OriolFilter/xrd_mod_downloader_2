@@ -620,11 +620,6 @@ class BinaryThatStartsWithXrd(GithubApp):
         return False
 
     @property
-    def is_installed(self) -> bool:
-        # raise Exception(self.get_repo_url())
-        return False
-
-    @property
     def can_be_launched(self) -> bool:
         return False
 
@@ -632,9 +627,25 @@ class BinaryThatStartsWithXrd(GithubApp):
         return [self._executable_name]
 
     @property
+    def _required_files(self) -> [str]:
+        return [self._executable_name]
+
+    @property
     @abstractmethod
     def _executable_name(self) -> str:
         pass
+
+    @property
+    def _is_installed(self) -> bool:
+        """
+        :return: True if all files exists.
+        False if any is missing.
+        """
+
+        for file in self._required_files:
+            if not self.current_version_files_path.joinpath(file).is_file():
+                return False
+        return True
 
 
 class XrdStartupLauncher(BinaryThatStartsWithXrd):

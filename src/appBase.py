@@ -83,6 +83,14 @@ class AppPublic(ABC):
     def starts_at_boot(self) -> bool:
         pass
 
+    @abstractmethod
+    async def patch(self):
+        """
+        "Patching" method, functionalities might vary.
+        :return:
+        """
+        pass
+
 
 @dataclasses.dataclass
 class AppStruct(AppPublic, ABC):
@@ -357,6 +365,30 @@ class GithubApp(AppStruct, ABC):
     def _get_assets_whitelist(self, tag: str) -> [str]:
         raise NotImplementedError("_get_assets_whitelist for app {}".format(self.__class__))
 
+    @property
+    def is_installed(self) -> bool:
+        if self.tag_name:
+            return self._is_installed
+        return False
+
+    @property
+    def _is_installed(self) -> bool:
+        """
+        :return: True if all files exists.
+        False if any is missing.
+        """
+
+        for file in self._required_files:
+            if not self.current_version_files_path.joinpath(file).is_file():
+                return False
+
+        return True
+
+    @property
+    @abstractmethod
+    def _required_files(self) -> [str]:
+        pass
+
     # def fetch_releases_available(self) -> None:
     #     cli = Github()
     #     self.release_available = cli.get_repo(self.app_name).get_releases()
@@ -465,11 +497,6 @@ class InjectorApp(GithubApp, ABC):
 
         with open(boot_xrd_path, "w", encoding="utf-8") as file:
             file.writelines(new_file_contents)
-
-    @property
-    @abstractmethod
-    def _required_files(self) -> [str]:
-        pass
 
     def _patch(self):
         # TODO Move patching away/into a single bat file, instead of 10/per mod.
@@ -674,26 +701,6 @@ exit
     @property
     def _launch_extra_args(self) -> [str]:
         return []
-
-    @property
-    def is_installed(self) -> bool:
-        if self.tag_name:
-            return self._is_installed
-        return False
-
-    @property
-    def _is_installed(self) -> bool:
-        """
-        :return: True if all files exists.
-        False if any is missing.
-        """
-
-        for file in self._required_files:
-            # raise Exception(f"{self.current_release_files_path}/{file}")
-            if not self.current_version_files_path.joinpath(file).is_file():
-                return False
-
-        return True
 
     @property
     def can_be_launched(self) -> bool:
