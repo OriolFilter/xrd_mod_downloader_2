@@ -499,6 +499,7 @@ class InjectorApp(GithubApp, ABC):
     #
     #     self._disable_patch()
 
+    # TODO remove
     def _disable_patch(self):
         """
         Find self.bat in BootXRD.bat and comment it.
@@ -519,6 +520,7 @@ class InjectorApp(GithubApp, ABC):
         with open(boot_xrd_path, "w", encoding="utf-8") as file:
             file.writelines(new_file_contents)
 
+    # TODO remove
     def _patch(self):
         # TODO Move patching away/into a single bat file, instead of 10/per mod.
         # TODO replace how it works
@@ -617,6 +619,7 @@ exit
         """
         pass
 
+    # TODO remove
     @property
     def _bat_file_name(self) -> str:
         return "{}.bat".format(self.app_name.replace('/', '_'))

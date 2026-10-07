@@ -650,7 +650,7 @@ class BinaryThatStartsWithXrd(InjectorApp):
         """
 
         # Check .bat exists
-        workdir = Path(self._config.xrd_path).joinpath("Binaries/Win32")
+        workdir = self._win32_mod_folder_path
         if not (workdir.exists() and workdir.is_dir()):
             return False
 
@@ -664,10 +664,6 @@ class BinaryThatStartsWithXrd(InjectorApp):
             if not (file_path.exists() and file_path.is_file()):
                 return False
         return True
-
-    @property
-    async def is_up_to_date(self) -> bool:
-        return False
 
     @property
     def can_be_launched(self) -> bool:
@@ -696,9 +692,6 @@ class BinaryThatStartsWithXrd(InjectorApp):
             if not self.current_version_files_path.joinpath(file).is_file():
                 return False
         return True
-
-    def _disable_patch(self):
-        pass
 
     def _patch(self):
         """
@@ -770,6 +763,24 @@ class BinaryThatStartsWithXrd(InjectorApp):
                 shutil.copy2(source_file_path, destination_file_path)
             else:
                 raise Exception(f"File '{source_file_path}' couldn't be found.")
+
+    def _disable_patch(self):
+        """
+        Find self startup line in BootXRD.bat and comment it.
+        :return:
+        """
+        boot_xrd_bat = "BootGGXrd.bat"
+        boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
+        new_file_contents: [str] = []
+        with open(boot_xrd_path, 'r', encoding="utf-8") as file:
+            for line in file:
+                if line.startswith(f"start /MIN {self._executable_name}"):
+                    new_file_contents.append(f"REM start /MIN {self._executable_name}\n")
+                else:
+                    new_file_contents.append(line)
+
+        with open(boot_xrd_path, "w", encoding="utf-8") as file:
+            file.writelines(new_file_contents)
 
     @property
     def _win32_mod_folder_path(self) -> Path:
