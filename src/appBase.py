@@ -278,6 +278,81 @@ class GithubApp(AppStruct, ABC):
                             return latest_tag
         return self._latest_version_name
 
+    async def _download_version(self, version_name: str) -> bool:
+        import certifi
+        import ssl
+        # Aiohttp can sometimes fail to very certs so this passes the device allowed certs issuers
+        sslcontext = ssl.create_default_context(cafile=certifi.where())
+
+        release_dictionary: dict | None = None
+        assets: [str] = []
+        tag_name: str | None = None
+        tag_url = f"{self.get_api_releases_url()}/tags/{version_name}"
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(tag_url,
+                                   timeout=5,
+                                   ssl=sslcontext) as resp:
+                if resp.status == 200:
+                    release_dictionary = await resp.json()
+                    tag_name = release_dictionary.get('tag_name')
+                else:
+                    raise Exception(f"Failed to get release with tag '{version_name}'")
+
+        for asset in release_dictionary.get('assets'):
+            assets.append(asset.get('name'))
+
+        files_to_download: [str] = []
+        assets_whitelist = self.get_assets_whitelist(tag=tag_name)
+
+        new_release_files_path = Path(self._config.app_download_path).joinpath(
+            self.app_name.replace("/", "_")).joinpath(tag_name)
+        for asset in assets:
+            if asset in assets_whitelist:
+                files_to_download.append(asset)
+
+        if not any(files_to_download):
+            raise Exception(
+                "No files matched the criteria to be Download."
+                "\nFiles matched: {}."
+                "\nFiles whitelisted: {}."
+                "\nFiles found: {}".format(
+                    files_to_download,
+                    assets_whitelist,
+                    assets)
+            )
+
+        # Check download folder exists
+        if not os.path.exists(path=new_release_files_path):
+            os.makedirs(new_release_files_path, exist_ok=True)
+        elif not os.path.isdir(new_release_files_path):
+            raise Exception("Downloads path ({}) is occupied by a file".format(new_release_files_path))
+
+        import io
+        for asset in files_to_download:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f'{self.get_repo_releases_url()}/download/{tag_name}/{asset}', timeout=5,
+                                        ssl=sslcontext, allow_redirects=True) as resp:
+                    content = await resp.read()
+                    if resp.status != 200:
+                        raise Exception(
+                            f"Failed to download the file {asset} from the release {tag_name}. "
+                            f"Status code {resp.status}. "
+                            f"Repository {self.repo_owner}/{self.repo_name}")
+                    async with aiofiles.open(file=f"{new_release_files_path}/{asset}", mode='wb+') as file:
+                        await file.write(content)
+            if asset.endswith(".zip"):
+                with ZipFile(f"{new_release_files_path}/{asset}") as z:
+                    z.extractall(path=new_release_files_path)
+            #         # TODO only extract desired files
+        return True
+
+    def get_assets_whitelist(self, tag: str) -> [str]:
+        return self._get_assets_whitelist(tag)
+
+    def _get_assets_whitelist(self, tag: str) -> [str]:
+        raise NotImplementedError("_download_app for app {}".format(self.__class__))
+
     # def fetch_releases_available(self) -> None:
     #     cli = Github()
     #     self.release_available = cli.get_repo(self.app_name).get_releases()
@@ -502,81 +577,6 @@ exit
             return True
         return False
 
-    async def _download_version(self, version_name: str) -> bool:
-        import certifi
-        import ssl
-        # Aiohttp can sometimes fail to very certs so this passes the device allowed certs issuers
-        sslcontext = ssl.create_default_context(cafile=certifi.where())
-
-        release_dictionary: dict | None = None
-        assets: [str] = []
-        tag_name: str | None = None
-        tag_url = f"{self.get_api_releases_url()}/tags/{version_name}"
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(tag_url,
-                                   timeout=5,
-                                   ssl=sslcontext) as resp:
-                if resp.status == 200:
-                    release_dictionary = await resp.json()
-                    tag_name = release_dictionary.get('tag_name')
-                else:
-                    raise Exception(f"Failed to get release with tag '{version_name}'")
-
-        for asset in release_dictionary.get('assets'):
-            assets.append(asset.get('name'))
-
-        files_to_download: [str] = []
-        assets_whitelist = self.get_assets_whitelist(tag=tag_name)
-
-        new_release_files_path = Path(self._config.app_download_path).joinpath(
-            self.app_name.replace("/", "_")).joinpath(tag_name)
-        for asset in assets:
-            if asset in assets_whitelist:
-                files_to_download.append(asset)
-
-        if not any(files_to_download):
-            raise Exception(
-                "No files matched the criteria to be Download."
-                "\nFiles matched: {}."
-                "\nFiles whitelisted: {}."
-                "\nFiles found: {}".format(
-                    files_to_download,
-                    assets_whitelist,
-                    assets)
-            )
-
-        # Check download folder exists
-        if not os.path.exists(path=new_release_files_path):
-            os.makedirs(new_release_files_path, exist_ok=True)
-        elif not os.path.isdir(new_release_files_path):
-            raise Exception("Downloads path ({}) is occupied by a file".format(new_release_files_path))
-
-        import io
-        for asset in files_to_download:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f'{self.get_repo_releases_url()}/download/{tag_name}/{asset}', timeout=5,
-                                        ssl=sslcontext, allow_redirects=True) as resp:
-                    content = await resp.read()
-                    if resp.status != 200:
-                        raise Exception(
-                            f"Failed to download the file {asset} from the release {tag_name}. "
-                            f"Status code {resp.status}. "
-                            f"Repository {self.repo_owner}/{self.repo_name}")
-                    async with aiofiles.open(file=f"{new_release_files_path}/{asset}", mode='wb+') as file:
-                        await file.write(content)
-            if asset.endswith(".zip"):
-                with ZipFile(f"{new_release_files_path}/{asset}") as z:
-                    z.extractall(path=new_release_files_path)
-            #         # TODO only extract desired files
-        return True
-
-    def get_assets_whitelist(self, tag: str) -> [str]:
-        return self._get_assets_whitelist(tag)
-
-    def _get_assets_whitelist(self, tag: str) -> [str]:
-        raise NotImplementedError("_download_app for app {}".format(self.__class__))
-
     def launch(self) -> None:
         if self._is_injected:
             raise Exception("Cannot launch, the mod is already running/injected")
@@ -725,6 +725,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
     Apps that require to run a .exe unrelated to mods and such.
     Ie, dotnet or visual redistributable
     """
+    # TODO shouldn't need Xrd to be running
 
     @property
     def tag_name(self) -> str:

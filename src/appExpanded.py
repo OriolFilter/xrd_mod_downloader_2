@@ -604,3 +604,28 @@ class GGXrdStopResettingINITwiceAYear(XrdBinaryPatcher):
         xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
         # TODO add a picker to select options/stuff
         stopResettingINITwiceAYear_patch(str(xrd_exe_path))
+
+
+# class XrdStartupLauncher(GithubApp):
+#     async def _download_version(self, version: str) -> bool:
+#         pass
+#
+#     @property
+#     def starts_at_boot(self) -> bool:
+#         pass
+#
+#     @property
+#     async def is_up_to_date(self) -> bool:
+#         pass
+#
+#     @property
+#     def is_installed(self) -> bool:
+#         pass
+#
+#     @property
+#     def can_be_launched(self) -> bool:
+#         pass
+#
+#     @property
+#     def _executable_name(self) -> str:
+#         return "placeholder.exe"

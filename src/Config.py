@@ -57,6 +57,7 @@ class GlobalConfig:
             GGXrdStopResettingINITwiceAYear(repo_name="GGXrdStopResettingINITwiceAYear", repo_owner="kkots",
                                             _config=self),
 
+            # XrdStartupLauncher(repo_name="xrd_startup_launcher", repo_owner="OriolFilter", _config=self)
         ]
 
         match sys.platform:
