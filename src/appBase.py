@@ -481,38 +481,18 @@ class InjectorApp(GithubApp, ABC):
                     return True
         return False
 
-    # TODO / update
     @property
     def _patch_files_exists(self) -> bool:
         """
-        Check if files exists.
-        Check if BootGGXrd.bat contains the DelayReplayTakeover.bat script.
+        Check if files exist in the desired mod/tool folder.
         :return:
         """
-        boot_xrd_bat = "BootGGXrd.bat"
-        files_to_contain = [
-            boot_xrd_bat,
-        ]
-
-        # Check App.bat (and other files) exists (we are not checking contents anyway)
-        for file in files_to_contain:
-            file_path = Path(self._config.xrd_path).joinpath(file)
-            if not (file_path.exists() and file_path.is_file()):
-                return False
         for file in self._required_files:
             file_path = self._win32_mod_directory_path.joinpath(file)
             if not (file_path.exists() and file_path.is_file()):
                 return False
         return True
 
-    # async def toggle_patch(self):
-    #     """Toggle start on boot for the mod"""
-    #     if self._is_binary_patched:
-    #         self._unpatch_binary()
-    #
-    #     self._disable_patch()
-
-    # TODO remove
     def _disable_patch(self):
         """
         Find self.bat in BootXRD.bat and comment it.
@@ -598,7 +578,6 @@ class InjectorApp(GithubApp, ABC):
         :param release:
         :return:
         """
-        # TODO refactor, this should be specific to github Struct
 
         self.tag_name = release.tag_name
         if self.starts_at_boot:
@@ -616,11 +595,6 @@ class InjectorApp(GithubApp, ABC):
         :return:
         """
         pass
-
-    # TODO remove
-    @property
-    def _bat_file_name(self) -> str:
-        return "{}.bat".format(self.app_name.replace('/', '_'))
 
     @property
     async def is_up_to_date(self) -> bool:
