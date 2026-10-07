@@ -18,7 +18,8 @@ from github import GitRelease
 
 import functions
 from exceptions import XrdNotRunning, WineLoaderNotFound, WinePrefixNotFound
-
+import json
+from re import sub as resub
 
 # from async_property import async_property
 
@@ -28,6 +29,7 @@ class AppPublic(ABC):
     """
 
     downloadeable = True  # Default value. Disable for Binary patchers
+    start_at_boot_requires_xrd_startup_launcher = True
 
     @property
     @abstractmethod
@@ -83,6 +85,30 @@ class AppPublic(ABC):
     def starts_at_boot(self) -> bool:
         pass
 
+    @abstractmethod
+    async def patch(self):
+        """
+        "Patching" method, functionalities might vary.
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    async def disable_patch(self):
+        """
+        Disable "Start With Xrd"
+        :return:
+        """
+
+    @abstractmethod
+    def launch(self) -> None:
+        """
+        Launch the respective mod/tool/etc.
+        Some might not make use of it.
+        :return:
+        """
+        pass
+
 
 @dataclasses.dataclass
 class AppStruct(AppPublic, ABC):
@@ -134,14 +160,14 @@ class AppStruct(AppPublic, ABC):
         # TODO rename/re-figure it out
 
     @property
-    def _win32_mod_folder_path(self) -> Path:
+    def _win32_mod_directory_path(self) -> Path:
         """
         Returns the path for the Binaries/Win32/app_folder directory.
 
 
         :return:
         """
-        return Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(self.app_name.replace("/", "_"))
+        return self._config._win32_directory_path.joinpath(self.app_name.replace("/", "_"))
 
     async def download_version(self, version: str) -> bool:
         """# TODO IDK"""
@@ -194,6 +220,10 @@ class AppStruct(AppPublic, ABC):
     @property
     @abstractmethod
     def starts_at_boot(self) -> bool:
+        """
+        If currently is configured/set to start at boot of Xrd, different mods/tools/classes will require different checks.
+        :return:
+        """
         raise NotImplementedError
 
     @property
@@ -214,6 +244,20 @@ class AppStruct(AppPublic, ABC):
             "tag_name": self.tag_name,
         }
 
+    @abstractmethod
+    def _patch(self):
+        pass
+
+    async def patch(self):
+        self._patch()
+
+    async def disable_patch(self):
+        self._disable_patch()
+
+    @abstractmethod
+    def _disable_patch(self):
+        pass
+
     def _unpatch_binary(self):
         """
         Can be used/implemented to unpatch the .exe or doing whatever.
@@ -224,6 +268,22 @@ class AppStruct(AppPublic, ABC):
     @property
     def current_version_files_path(self) -> Path:
         return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_")).joinpath(self.tag_name)
+
+    @property
+    def _xrd_launcher_configured_apps(self) -> [{str: str}]:
+        with open(self._xrd_launcher_path, 'r', encoding="utf-8") as json_file:
+            contents = json_file.read()
+            if len(contents) == 0:
+                return []
+            return json.loads(contents)
+
+    @property
+    def _xrd_launcher_path(self) -> Path:
+        """
+        Returns the path of the Xrd launcher
+        :return:
+        """
+        return self._config._win32_directory_path.joinpath("xrd_executable_list.json")
 
 
 class GithubApp(AppStruct, ABC):
@@ -277,230 +337,6 @@ class GithubApp(AppStruct, ABC):
                             self._latest_version_name = latest_tag
                             return latest_tag
         return self._latest_version_name
-
-    # def fetch_releases_available(self) -> None:
-    #     cli = Github()
-    #     self.release_available = cli.get_repo(self.app_name).get_releases()
-
-
-class InjectorApp(GithubApp, ABC):
-    """
-    Used by apps that require injection
-    """
-
-    @property
-    def _bat_file_enabled(self) -> bool:
-        """
-        Checks if the app.bat file is uncommented/ready
-        :return:
-        """
-        boot_xrd_bat = "BootGGXrd.bat"
-        boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
-        with open(boot_xrd_path, 'r', encoding="utf-8") as boot_xrd_file:
-            for line in boot_xrd_file.readlines():
-                if line.startswith(f"start /MIN {self._bat_file_name}"):
-                    return True
-        return False
-
-    @property
-    def starts_at_boot(self) -> bool:
-        # @property
-        # @abstractmethod
-        # def starts_at_boot(self) -> bool:
-        """
-        Whether if mod/app is considered to start at Xrd boot.
-
-        Types:
-        - .exe binary is patched (literal sense of the word)
-        - mod starts with xrd at boot through the BootXrd.bat file
-
-        If xrd_path is not populated/found forces a False.
-
-        Condition is (if autostart.bat patched or .exe patched) return true/false.
-        :return:
-        """
-
-        return any(self._config.xrd_path) and (
-                (self._bat_file_enabled and self._patch_files_exists) or self._is_binary_patched)
-
-    @property
-    def _patch_files_exists(self) -> bool:
-        """
-        Check if files exists.
-        Check if BootGGXrd.bat contains the DelayReplayTakeover.bat script.
-        :return:
-        """
-        boot_xrd_bat = "BootGGXrd.bat"
-        files_to_contain = [
-            boot_xrd_bat,
-        ]
-
-        # Check .bat exists
-        bat_path = Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(self._bat_file_name)
-        if not (bat_path.exists() and bat_path.is_file()):
-            return False
-
-        # Check App.bat (and other files) exists (we are not checking contents anyway)
-        for file in files_to_contain:
-            file_path = Path(self._config.xrd_path).joinpath(file)
-            if not (file_path.exists() and file_path.is_file()):
-                return False
-        for file in self._required_files:
-            file_path = self._win32_mod_folder_path.joinpath(file)
-            if not (file_path.exists() and file_path.is_file()):
-                return False
-        return True
-
-    async def patch(self):
-        self._patch()
-
-    # async def toggle_patch(self):
-    #     """Toggle start on boot for the mod"""
-    #     if self._is_binary_patched:
-    #         self._unpatch_binary()
-    #
-    #     self._disable_patch()
-
-    async def disable_patch(self):
-        if self._is_binary_patched:
-            self._unpatch_binary()
-        if self._bat_file_enabled:
-            self._disable_patch()
-
-    def _disable_patch(self):
-        """
-        Find self.bat in BootXRD.bat and comment it.
-        :return:
-        """
-        boot_xrd_bat = "BootGGXrd.bat"
-        boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
-        new_file_contents: [str] = []
-        with open(boot_xrd_path, 'r', encoding="utf-8") as file:
-            for line in file:
-                if any(self._bat_file_name) and line.startswith(f"start /MIN {self._bat_file_name}"):
-                    new_file_contents.append(f"REM start /MIN {self._bat_file_name}\n")
-                # elif len(self._bat_file_name) > 0 and line.startswith(f"REM {self._bat_file_name}"):
-                #     new_file_contents.append(f"{self._bat_file_name}\n")
-                else:
-                    new_file_contents.append(line)
-
-        with open(boot_xrd_path, "w", encoding="utf-8") as file:
-            file.writelines(new_file_contents)
-
-    @property
-    @abstractmethod
-    def _required_files(self) -> [str]:
-        pass
-
-    def _patch(self):
-        # TODO Move patching away/into a single bat file, instead of 10/per mod.
-        # TODO replace how it works
-        """
-        Create/overwrite the DelayApp.bat file.
-        Append the start of the bat at the bottom of the BootGGXrd.bat script.
-        :return:
-        """
-        boot_xrd_bat = "BootGGXrd.bat"
-        bat_contents = """
-@echo off
-REM This file is automatically generated. Don't edit it manually as it can be overwritten anytime.
-SET "CHECK_XRD=(tasklist /FI "IMAGENAME eq GuiltyGearXrd.exe" /FI "WINDOWTITLE eq Guilty Gear Xrd -REVELATOR-" | findstr GuiltyGearXrd.exe > NUL)"
-
-%CHECK_XRD% && goto :finish
-echo Waiting for Xrd to launch...
-FOR /L %%I IN (1,1,30) DO (
-  %CHECK_XRD% && goto :finish || (ping -n 2 127.0.0.1 > NU)
-)
-:finish
-%CHECK_XRD% && cd {app_directory} && ping 127.0.0.1 -n 10 > nul && start /MIN {executable_name} {extra_args}
-
-exit
-""".format(
-            app_directory=self.app_name.replace("/", "_"),
-            executable_name=self._executable_name,
-            extra_args=" ".join(f'"{arg}"' for arg in self._launch_extra_args)
-        )
-        if not self._win32_mod_folder_path.exists():
-            self._win32_mod_folder_path.mkdir(parents=True)
-
-        # Check DelayApp.bat
-        bat_file_path = Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(self._bat_file_name)
-        with open(bat_file_path, 'w+', encoding="utf-8") as file:
-            file.write(bat_contents)
-
-        # Check BootGGXrd.bat
-        boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
-
-        new_file_contents: [str] = []
-        with open(boot_xrd_path, 'r', encoding="utf-8") as file:
-            # Skip if line exists (ie, when "upgrading/changing the version" of the mod.)
-            append_to_boot_xrd = True
-
-            for line in file:
-                if any(self._executable_name) and line.startswith(self._executable_name):
-                    # Comment "old"/original method of patching
-                    new_file_contents.append(f":: {line}")
-                elif any(self._bat_file_name) and line.startswith(f"REM start /MIN {self._bat_file_name}"):
-                    # If bat exists but is commented uncomment
-                    new_file_contents.append(f"start /MIN {self._bat_file_name}\n")
-                else:
-                    new_file_contents.append(line)
-
-                # Don't append if the bat already exists.
-                if line.find(self._bat_file_name) >= 0:
-                    append_to_boot_xrd = False
-            # Append boot.bat
-            if append_to_boot_xrd:
-                new_file_contents.append(f"start /MIN {self._bat_file_name}\n")
-
-        with open(boot_xrd_path, "w", encoding="utf-8") as file:
-            file.writelines(new_file_contents)
-
-        # Copy exe and dll/files
-        for file in self._required_files:
-            source_file_path = self.current_version_files_path.joinpath(file)
-            destination_file_path = self._win32_mod_folder_path.joinpath(file)
-            if source_file_path.exists() and source_file_path.is_file() and not destination_file_path.is_dir():
-                shutil.copy2(source_file_path, destination_file_path)
-            else:
-                raise Exception(f"File '{source_file_path}' couldn't be found.")
-
-    async def install_release(self, release: GitRelease) -> bool:
-        """
-        The process of moving/replacing files, or changes required after having downloaded the mod/files locally.
-        :param release:
-        :return:
-        """
-        # TODO refactor, this should be specific to github Struct
-
-        self.tag_name = release.tag_name
-        if self.starts_at_boot:
-            if self._is_binary_patched:
-                self._unpatch_binary()
-            await self.patch()
-        return True
-
-    @property
-    @abstractmethod
-    def _executable_name(self) -> str:
-        """
-        Returns the location of the .exe file or whatever that needs to be launched.
-        Usually will be /app/tag/app.exe, but some might vary/have tag prefixes/suffixes.
-        :return:
-        """
-        pass
-
-    @property
-    def _bat_file_name(self) -> str:
-        return "{}.bat".format(self.app_name.replace('/', '_'))
-
-    @property
-    async def is_up_to_date(self) -> bool:
-        if self.tag_name \
-                and self.tag_name == await self.get_latest_version_name():
-            # and self.latest_release \
-            return True
-        return False
 
     async def _download_version(self, version_name: str) -> bool:
         import certifi
@@ -556,7 +392,7 @@ exit
         for asset in files_to_download:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f'{self.get_repo_releases_url()}/download/{tag_name}/{asset}', timeout=5,
-                                        ssl=sslcontext, allow_redirects=True) as resp:
+                                       ssl=sslcontext, allow_redirects=True) as resp:
                     content = await resp.read()
                     if resp.status != 200:
                         raise Exception(
@@ -575,7 +411,198 @@ exit
         return self._get_assets_whitelist(tag)
 
     def _get_assets_whitelist(self, tag: str) -> [str]:
-        raise NotImplementedError("_download_app for app {}".format(self.__class__))
+        raise NotImplementedError("_get_assets_whitelist for app {}".format(self.__class__))
+
+    @property
+    def is_installed(self) -> bool:
+        if self.tag_name:
+            return self._is_installed
+        return False
+
+    @property
+    def _is_installed(self) -> bool:
+        """
+        :return: True if all files exists.
+        False if any is missing.
+        """
+
+        for file in self._required_files:
+            if not self.current_version_files_path.joinpath(file).is_file():
+                return False
+
+        return True
+
+    @property
+    @abstractmethod
+    def _required_files(self) -> [str]:
+        pass
+
+    # def fetch_releases_available(self) -> None:
+    #     cli = Github()
+    #     self.release_available = cli.get_repo(self.app_name).get_releases()
+
+
+class InjectorApp(GithubApp, ABC):
+    """
+    Used by apps that require injection
+    """
+
+    @property
+    def starts_at_boot(self) -> bool:
+        # @property
+        # @abstractmethod
+        # def starts_at_boot(self) -> bool:
+        """
+        Whether if mod/app is considered to start at Xrd boot.
+
+        Types:
+        - .exe binary is patched (literal sense of the word)
+        - mod starts with xrd at boot through the BootXrd.bat file
+
+        If xrd_path is not populated/found forces a False.
+
+        Condition is (if autostart.bat patched or .exe patched) return true/false.
+        :return:
+        """
+
+        return any(self._config.xrd_path) and (
+                (self._xrd_launcher_entry_exists and self._patch_files_exists) or self._is_binary_patched)
+
+    @property
+    def _xrd_launcher_entry_exists(self) -> bool:
+        """
+        Checks if the app has an entry for the xrd startup launcher tool.
+        :return:
+        """
+        xrd_launcher_json = self._xrd_launcher_path
+        if xrd_launcher_json.exists() and xrd_launcher_json.is_file():
+            for app in self._xrd_launcher_configured_apps:
+                app: dict
+                if app.get("mod_name") == self.app_name:
+                    return True
+        return False
+
+    @property
+    def _patch_files_exists(self) -> bool:
+        """
+        Check if files exist in the desired mod/tool folder.
+        :return:
+        """
+        for file in self._required_files:
+            file_path = self._win32_mod_directory_path.joinpath(file)
+            if not (file_path.exists() and file_path.is_file()):
+                return False
+        return True
+
+    def _disable_patch(self):
+        """
+        Find self.bat in BootXRD.bat and comment it.
+
+        This assumes that the file exists, contents are readable etc, checks are out of the scope of this function.
+        :return:
+        """
+        xrd_launcher_json: Path = self._xrd_launcher_path
+
+        json_values: [{str: str}] = self._xrd_launcher_configured_apps
+        new_json_values: [{str: str}] = []
+
+        for app in json_values:
+            app: dict
+            if app.get("mod_name") != self.app_name:
+                new_json_values.append(app)
+
+        with open(xrd_launcher_json, 'w+', encoding="utf-8") as file:
+            file.write(json.dumps(new_json_values))
+
+    def _patch(self):
+        """
+        Moves the files to the own mod directory in the located in Xrd/Binaries/Win32.
+
+        Adds an entry to the file "xrd_executable_list.json" to be launched at startup.
+        :return:
+        """
+        # Check if directory exists || create
+        if not self._win32_mod_directory_path.exists():
+            self._win32_mod_directory_path.mkdir(parents=True)
+
+        # Copy exe and dll/files
+        for file in self._required_files:
+            source_file_path = self.current_version_files_path.joinpath(file)
+            destination_file_path = self._win32_mod_directory_path.joinpath(file)
+            if source_file_path.exists() and source_file_path.is_file() and not destination_file_path.is_dir():
+                shutil.copy2(source_file_path, destination_file_path)
+            else:
+                raise Exception(f"File '{source_file_path}' couldn't be found.")
+
+        # Create xrd_executable_list.json if doesn't exist
+        xrd_launcher_json: Path = self._xrd_launcher_path
+
+        json_values: [{str: str}] = []
+        new_json_values: [{str: str}] = []
+        if xrd_launcher_json.is_file():
+            json_values = self._xrd_launcher_configured_apps
+
+        elif xrd_launcher_json.exists() and not xrd_launcher_json.is_file():
+            raise Exception(f"Path {xrd_launcher_json} is occupied by something that's not a file.")
+        # Load config
+        this_app_values = {
+            "mod_name": self.app_name,
+            "workdir": resub('^' + self._config._win32_directory_path.__str__() + '/', '',  self._win32_mod_directory_path.__str__()),
+            "executable_path": self._executable_name,
+            "arguments": self._launch_extra_args,
+            "delay": 1  # TODO harcoded
+        }
+
+        append_values = True
+
+        # Replace own entry if exists, append if it doesn't.
+        for app in json_values:
+            app: dict
+            if app.get("mod_name") == self.app_name:
+                new_json_values.append(this_app_values)
+                append_values = False
+            else:
+                new_json_values.append(app)
+
+        if append_values:
+            new_json_values.append(this_app_values)
+
+        # raise Exception(json_values)
+
+        with open(xrd_launcher_json, 'w+', encoding="utf-8") as file:
+            file.write(json.dumps(new_json_values))
+
+    async def install_release(self, release: GitRelease) -> bool:
+        """
+        The process of moving/replacing files, or changes required after having downloaded the mod/files locally.
+        :param release:
+        :return:
+        """
+
+        self.tag_name = release.tag_name
+        if self.starts_at_boot:
+            if self._is_binary_patched:
+                self._unpatch_binary()
+            await self.patch()
+        return True
+
+    @property
+    @abstractmethod
+    def _executable_name(self) -> str:
+        """
+        Returns the location of the .exe file or whatever that needs to be launched.
+        Usually will be /app/tag/app.exe, but some might vary/have tag prefixes/suffixes.
+        :return:
+        """
+        pass
+
+    @property
+    async def is_up_to_date(self) -> bool:
+        if self.tag_name \
+                and self.tag_name == await self.get_latest_version_name():
+            # and self.latest_release \
+            return True
+        return False
 
     def launch(self) -> None:
         if self._is_injected:
@@ -672,26 +699,6 @@ exit
         return []
 
     @property
-    def is_installed(self) -> bool:
-        if self.tag_name:
-            return self._is_installed
-        return False
-
-    @property
-    def _is_installed(self) -> bool:
-        """
-        :return: True if all files exists.
-        False if any is missing.
-        """
-
-        for file in self._required_files:
-            # raise Exception(f"{self.current_release_files_path}/{file}")
-            if not self.current_version_files_path.joinpath(file).is_file():
-                return False
-
-        return True
-
-    @property
     def can_be_launched(self) -> bool:
         return any(self._executable_name)
 
@@ -725,6 +732,10 @@ class StandAloneExeRequirement(InjectorApp, ABC):
     Apps that require to run a .exe unrelated to mods and such.
     Ie, dotnet or visual redistributable
     """
+
+    start_at_boot_requires_xrd_startup_launcher = False
+
+    # TODO shouldn't need Xrd to be running
 
     @property
     def tag_name(self) -> str:
@@ -817,7 +828,7 @@ class StandAloneExeRequirement(InjectorApp, ABC):
 
         return Path(self._config.app_download_path).joinpath(self.app_name.replace("/", "_"))
 
-    def patch(self):
+    def _patch(self):
         # IDK if I should be passing the extra args but
         # TODO check again
         self._launch(self._launch_extra_args)
@@ -843,6 +854,7 @@ class XrdBinaryPatcher(AppStruct, abc.ABC):
     """
 
     downloadeable = False
+    start_at_boot_requires_xrd_startup_launcher = False
 
     @property
     def tag_name(self) -> str:
@@ -895,9 +907,6 @@ class XrdBinaryPatcher(AppStruct, abc.ABC):
         if self._is_binary_patched():
             raise Exception(f"{XrdBinaryPatcher.__class__} is already patched. Skipping...")
         self._patch()
-
-    async def disable_patch(self):
-        self._disable_patch()
 
     @property
     def is_installed(self) -> bool:

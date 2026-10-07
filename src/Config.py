@@ -57,6 +57,7 @@ class GlobalConfig:
             GGXrdStopResettingINITwiceAYear(repo_name="GGXrdStopResettingINITwiceAYear", repo_owner="kkots",
                                             _config=self),
 
+            XrdStartupLauncher(repo_name="xrd_startup_launcher", repo_owner="OriolFilter", _config=self)
         ]
 
         match sys.platform:
@@ -93,6 +94,9 @@ class GlobalConfig:
 
     def get_app(self, app_name: str) -> AppStruct:
         return self.mod_dict.get(app_name, None)
+
+    def get_startup_launcher_app(self) -> AppStruct:
+        return self.get_app("OriolFilter/xrd_startup_launcher")
 
     @property
     def workdir(self) -> str:
@@ -267,3 +271,11 @@ class GlobalConfig:
                 if not (file_path.exists() or file_path.is_file()):
                     return False
         return True
+
+    @property
+    def _win32_directory_path(self):
+        """
+        Path to the Xrd/Binaries/Win32 directory
+        :return:
+        """
+        return Path(self.xrd_path).joinpath("Binaries/Win32")

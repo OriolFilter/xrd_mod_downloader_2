@@ -47,7 +47,7 @@ class GenericGithubApp(InjectorApp):
         raise NotImplementedError("_get_assets_whitelist for app {}".format(self.__class__))
 
 
-class WakeUpTool(InjectorApp, GithubApp):
+class WakeUpTool(InjectorApp):
 
     @property
     def _key_dll(self) -> str:
@@ -111,7 +111,7 @@ class WakeUpTool(InjectorApp, GithubApp):
         return False
 
 
-class ReplayTakeover(InjectorApp, GithubApp):
+class ReplayTakeover(InjectorApp):
 
     @property
     def _key_dll(self) -> str:
@@ -133,7 +133,7 @@ class ReplayTakeover(InjectorApp, GithubApp):
         return assets_whitelist
 
 
-class GGXrdDisplayPing(InjectorApp, GithubApp):
+class GGXrdDisplayPing(InjectorApp):
 
     @property
     def _key_dll(self) -> str:
@@ -189,7 +189,7 @@ class GGXrdDisplayPing(InjectorApp, GithubApp):
         return ["-force"]
 
 
-class GGXrdVersionSelector(InjectorApp, GithubApp):
+class GGXrdVersionSelector(InjectorApp):
 
     @property
     def _key_dll(self) -> str:
@@ -235,14 +235,14 @@ class GGXrdVersionSelector(InjectorApp, GithubApp):
         return assets_whitelist
 
 
-class HitboxOverlay(InjectorApp, GithubApp):
+class HitboxOverlay(InjectorApp):
     @property
     def _key_dll(self) -> str:
         return "ggxrd_hitbox_overlay.dll"
 
     @property
     def _is_binary_patched(self) -> bool:
-        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        xrd_exe_path = self._config._win32_directory_path.joinpath("GuiltyGearXrd.exe")
         return functions.is_hitbox_overlay_patched(xrd_exe_path)
 
     def _unpatch_binary(self):
@@ -250,7 +250,7 @@ class HitboxOverlay(InjectorApp, GithubApp):
         # Prevent unpatch if version is less than 15
         # Windows doesn't allow to write a file if it's already open.
         # So... on Windows raise an error if Xrd is open.
-        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        xrd_exe_path = self._config._win32_directory_path.joinpath("GuiltyGearXrd.exe")
 
         if sys.platform == 'win32':
             for pid in psutil.process_iter():
@@ -310,20 +310,20 @@ class HitboxOverlay(InjectorApp, GithubApp):
         return ["-force"]
 
 
-class GGXrdFreeCam(InjectorApp, GithubApp):
+class GGXrdFreeCam(InjectorApp):
     @property
     def _key_dll(self) -> str:
         return "ggxrd_freecam_dll.dll"
 
     @property
     def _is_binary_patched(self) -> bool:
-        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        xrd_exe_path = self._config._win32_directory_path.joinpath("GuiltyGearXrd.exe")
         return functions.is_freecam_overlay_patched(xrd_exe_path)
 
     def _unpatch_binary(self):
         # Windows doesn't allow to write a file if it's already open.
         # So... on Windows raise an error if Xrd is open.
-        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        xrd_exe_path = self._config._win32_directory_path.joinpath("GuiltyGearXrd.exe")
 
         if sys.platform == 'win32':
             for pid in psutil.process_iter():
@@ -541,7 +541,7 @@ class DotNet(StandAloneExeRequirement):
 
 class GGXrdBackgroundGamepad(XrdBinaryPatcher):
     def _disable_patch(self):
-        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        xrd_exe_path = self._config._win32_directory_path.joinpath("GuiltyGearXrd.exe")
         with open(xrd_exe_path, "r+b") as file:
             file.seek(0x947762)
             file.write(b'\x0f\x84\x0d\x12\x00\x00')
@@ -553,14 +553,14 @@ class GGXrdBackgroundGamepad(XrdBinaryPatcher):
             file.write(b'\x06')
 
     def _is_binary_patched(self) -> bool:
-        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        xrd_exe_path = self._config._win32_directory_path.joinpath("GuiltyGearXrd.exe")
         with open(xrd_exe_path, "rb") as file:
             file.seek(0x947762)
             is_patched = (file.read(6) == b'\x90\x90\x90\x90\x90\x90')
         return is_patched
 
     def _patch(self):
-        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        xrd_exe_path = self._config._win32_directory_path.joinpath("GuiltyGearXrd.exe")
         with open(xrd_exe_path, "r+b") as file:
             file.seek(0x947762)
             file.write(b'\x90\x90\x90\x90\x90\x90')
@@ -574,16 +574,16 @@ class GGXrdBackgroundGamepad(XrdBinaryPatcher):
 
 class GGXrdFasterLoadingTimes(XrdBinaryPatcher):
     def _disable_patch(self):
-        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        xrd_exe_path = self._config._win32_directory_path.joinpath("GuiltyGearXrd.exe")
         return fasterLoadingTimes_unpatch(guilty_gear_xrd_exe_path=str(xrd_exe_path),
                                           also_make_intro_cutscenes_unskippable=True)
 
     def _is_binary_patched(self) -> bool:
-        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        xrd_exe_path = self._config._win32_directory_path.joinpath("GuiltyGearXrd.exe")
         return fasterLoadingTimes_is_patched(str(xrd_exe_path))
 
     def _patch(self):
-        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        xrd_exe_path = self._config._win32_directory_path.joinpath("GuiltyGearXrd.exe")
         # TODO add a picker to select options/stuff
         fasterLoadingTimes_patch(guilty_gear_xrd_exe_path=str(xrd_exe_path),
                                  automash=True,
@@ -593,14 +593,187 @@ class GGXrdFasterLoadingTimes(XrdBinaryPatcher):
 
 class GGXrdStopResettingINITwiceAYear(XrdBinaryPatcher):
     def _disable_patch(self):
-        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        xrd_exe_path = self._config._win32_directory_path.joinpath("GuiltyGearXrd.exe")
         return stopResettingINITwiceAYear_unpatch(str(xrd_exe_path))
 
     def _is_binary_patched(self) -> bool:
-        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        xrd_exe_path = self._config._win32_directory_path.joinpath("GuiltyGearXrd.exe")
         return stopResettingINITwiceAYear_is_patched(str(xrd_exe_path))
 
     def _patch(self):
-        xrd_exe_path = Path(self._config.xrd_path).joinpath("Binaries/Win32/GuiltyGearXrd.exe")
+        xrd_exe_path = self._config._win32_directory_path.joinpath("GuiltyGearXrd.exe")
         # TODO add a picker to select options/stuff
         stopResettingINITwiceAYear_patch(str(xrd_exe_path))
+
+
+class BinaryThatStartsWithXrd(InjectorApp):
+    """
+    Binary that's only supposed to be launched when xrd starts.
+    """
+
+    start_at_boot_requires_xrd_startup_launcher = False
+
+    @property
+    def _boot_xrd_enabled(self) -> bool:
+        """
+        Checks if the app.bat file is uncommented/ready
+        :return:
+        """
+        boot_xrd_bat = "BootGGXrd.bat"
+        boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
+        with open(boot_xrd_path, 'r', encoding="utf-8") as boot_xrd_file:
+            for line in boot_xrd_file.readlines():
+                if line.startswith(f"start /MIN {self._executable_name}"):
+                    return True
+        return False
+
+    @property
+    def starts_at_boot(self) -> bool:
+        # @property
+        # @abstractmethod
+        # def starts_at_boot(self) -> bool:
+        """
+        Whether if mod/app is considered to start at Xrd boot.
+
+        If xrd_path is not populated/found forces a False.
+
+        Condition is (if "BootGGXrd.bat" is configured and files exist) return true/false.
+        :return:
+        """
+
+        return any(self._config.xrd_path) and (
+                (self._boot_xrd_enabled and self._required_files_exist) or self._is_binary_patched)
+
+    @property
+    def _required_files_exist(self) -> bool:
+        """
+        Check if the required files at the Xrd/Binaries/Win32 directory
+        :return:
+        """
+
+        # Check .bat exists
+        workdir = self._win32_mod_directory_path
+        if not (workdir.exists() and workdir.is_dir()):
+            return False
+
+        # Check files exist (we are not checking contents anyway)
+        for file in self._required_files:
+            file_path = workdir.joinpath(file)
+            if not (file_path.exists() and file_path.is_file()):
+                return False
+        for file in self._required_files:
+            file_path = self._win32_mod_directory_path.joinpath(file)
+            if not (file_path.exists() and file_path.is_file()):
+                return False
+        return True
+
+    @property
+    def can_be_launched(self) -> bool:
+        return False
+
+    def _get_assets_whitelist(self, tag: str) -> [str]:
+        return [self._executable_name]
+
+    @property
+    def _required_files(self) -> [str]:
+        return [self._executable_name]
+
+    @property
+    @abstractmethod
+    def _executable_name(self) -> str:
+        pass
+
+    @property
+    def _is_installed(self) -> bool:
+        """
+        :return: True if all files exists.
+        False if any is missing.
+        """
+
+        for file in self._required_files:
+            if not self.current_version_files_path.joinpath(file).is_file():
+                return False
+        return True
+
+    def _patch(self):
+        """
+        Append the start of the "BootGGXrd.bat" the .exe file to execute.
+        :return:
+        """
+
+        # Check BootGGXrd.bat
+        boot_xrd_path = Path(self._config.xrd_path).joinpath("BootGGXrd.bat")
+
+        new_file_contents: [str] = []
+        with open(boot_xrd_path, 'r', encoding="utf-8") as file:
+            # Skip if line exists (ie, when "upgrading/changing the version" of the mod.)
+            append_to_boot_xrd = True
+            bat_command = f"start /MIN {self._executable_name}"
+            for line in file:
+                if line.startswith(bat_command) or line.startswith(f"REM {bat_command}"):
+                    # If matched replace existing line
+                    # Matches both commented and uncommented
+                    new_file_contents.append(f"{bat_command}\n")
+                    append_to_boot_xrd = False
+                else:
+                    # If not matched/pass/keep the same contents
+                    new_file_contents.append(line)
+
+            # Append command
+            if append_to_boot_xrd:
+                new_file_contents.append(f"{bat_command}\n")
+
+        with open(boot_xrd_path, "w", encoding="utf-8") as file:
+            file.writelines(new_file_contents)
+
+        # Copy exe and dll/files
+        for file in self._required_files:
+            source_file_path = self.current_version_files_path.joinpath(file)
+            destination_file_path = self._win32_mod_directory_path.joinpath(file)
+            if source_file_path.exists() and source_file_path.is_file() and not destination_file_path.is_dir():
+                shutil.copy2(source_file_path, destination_file_path)
+            else:
+                raise Exception(f"File '{source_file_path}' couldn't be found.")
+
+    def _disable_patch(self):
+        """
+        Find self startup line in BootXRD.bat and comment it.
+        :return:
+        """
+        boot_xrd_bat = "BootGGXrd.bat"
+        boot_xrd_path = Path(self._config.xrd_path).joinpath(boot_xrd_bat)
+        new_file_contents: [str] = []
+        with open(boot_xrd_path, 'r', encoding="utf-8") as file:
+            for line in file:
+                if line.startswith(f"start /MIN {self._executable_name}"):
+                    new_file_contents.append(f"REM start /MIN {self._executable_name}\n")
+                else:
+                    new_file_contents.append(line)
+
+        with open(boot_xrd_path, "w", encoding="utf-8") as file:
+            file.writelines(new_file_contents)
+
+    @property
+    def _win32_mod_directory_path(self) -> Path:
+        """
+        Returns the path for the Binaries/Win32/app_folder directory.
+
+        :return:
+        """
+        return self._config._win32_directory_path
+
+    @property
+    def _key_dll(self) -> str:
+        """
+        No DLL to keep track of
+        :return:
+        """
+        return ""
+
+    # TODO make launch possible, using the workdir from the Xrd Binary folder
+
+
+class XrdStartupLauncher(BinaryThatStartsWithXrd):
+    @property
+    def _executable_name(self) -> str:
+        return "xrd_startup_launcher.exe"

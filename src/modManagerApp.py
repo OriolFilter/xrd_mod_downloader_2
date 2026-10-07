@@ -172,6 +172,14 @@ class ModManagerApp(App):
         await self._action_patch_mod()
 
     async def _action_patch_mod(self, app=None):
+        xrd_startup_launcher_app: AppPublic = self.config.get_startup_launcher_app()
+        # if app.auto_start_requires_xrd_startup_launcher and xrd_startup_launcher_app.starts_at_boot:
+        #     starts_at_boot_bool = app.starts_at_boot
+        # elif app.auto_start_requires_xrd_startup_launcher and not xrd_startup_launcher_app.starts_at_boot:
+        #     starts_at_boot_bool = False
+        # else:
+        #     starts_at_boot_bool = app.starts_at_boot
+
         if not app:
             app = self.selected_app
 
@@ -180,17 +188,21 @@ class ModManagerApp(App):
                         severity="warning")
             return 0
         elif not app.starts_at_boot:
-            self.notify(f"Patching App: {app.app_name}",
-                        severity="warning")
+            if app.start_at_boot_requires_xrd_startup_launcher and not xrd_startup_launcher_app.starts_at_boot:
+                self.notify(f"Patching App: {app.app_name} depends from app {xrd_startup_launcher_app.app_name} to be configured to start at boot.",
+                            severity="warning")
+            else:
+                self.notify(f"Patching App: {app.app_name}",severity="warning")
+                async with asyncio.TaskGroup() as tg:
+                    patch = tg.create_task(app.patch())
 
-            async with asyncio.TaskGroup() as tg:
-                patch = tg.create_task(app.patch())
-
-            if not patch.done():
-                # No clue under which circumstances this would occur but whatever
-                # TODO capture exceptions ?
-                self.notify(f"Failed to patch mod {app.app_name}!", severity="error")
-                return 0
+                if not patch.done():
+                    # No clue under which circumstances this would occur but whatever
+                    # TODO capture exceptions ?
+                    self.notify(f"Failed to patch mod {app.app_name}!", severity="error")
+                    return 0
+                else:
+                    self.notify(f"Mod {app.app_name} now starts at boot.")
         else:
             self.notify(f"Unpatch App: {app.app_name}",
                         severity="warning")
@@ -203,12 +215,13 @@ class ModManagerApp(App):
                 # TODO capture exceptions ?
                 self.notify(f"Failed to unpatch mod {app.app_name}!", severity="error")
                 return 0
-
-        self.notify(f"Mod {app.app_name} now starts at boot.")
+            else:
+                self.notify(f"Mod {app.app_name} no longer starts at boot.")
 
         await self.__update_set_values(rows=app.app_name, columns=["starts_at_boot"])
 
     async def __update_set_values(self, columns: str | [str] = None, rows: str | [str] = None) -> None:
+        xrd_startup_launcher_app: AppPublic = self.config.get_startup_launcher_app()
         if columns is str:
             columns = [columns]
         else:
@@ -232,12 +245,21 @@ class ModManagerApp(App):
             # loop = asyncio.get_event_loop()
             # latest_release = loop.run_until_complete(app.get_latest_version_name())
             # loop.close()
+
+            # Starts at Boot
+            if app.start_at_boot_requires_xrd_startup_launcher and xrd_startup_launcher_app.starts_at_boot:
+                starts_at_boot_bool = app.starts_at_boot
+            elif app.start_at_boot_requires_xrd_startup_launcher and not xrd_startup_launcher_app.starts_at_boot:
+                starts_at_boot_bool = False
+            else:
+                starts_at_boot_bool = app.starts_at_boot
+
             app_info = {
                 "app_name": app.app_name,
                 "tag_name": tag_name_message,
                 "latest_version_available": await app.get_latest_version_name(),
                 "installed": (NO, TRUE)[app.is_installed],
-                "starts_at_boot": (NO, TRUE)[app.starts_at_boot],
+                "starts_at_boot": (NO, TRUE)[starts_at_boot_bool],
                 "description": app.description,
                 # "up_to_date": (NO, TRUE)[app.up_to_date]
             }
