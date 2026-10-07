@@ -3,13 +3,12 @@ import asyncio
 import dataclasses
 import os.path
 import shutil
-import subprocess
 import sys
 import time
 import urllib.request
 from abc import ABC, abstractmethod
 from pathlib import Path
-from subprocess import DEVNULL
+from subprocess import DEVNULL, Popen
 from zipfile import ZipFile
 
 import aiofiles
@@ -629,7 +628,7 @@ exit
                     "DISPLAY": envs.get("DISPLAY")
                 }
 
-                process = subprocess.Popen(
+                process = Popen(
                     shell=False,
                     args=[
                         wineloader,
@@ -644,7 +643,7 @@ exit
                     start_new_session=True,
                 )
             case "win32":
-                process = subprocess.Popen(
+                process = Popen(
                     shell=False,
                     args=[
                         self.current_version_files_path.joinpath(self._executable_name).absolute(),
