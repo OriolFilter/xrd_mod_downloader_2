@@ -268,3 +268,11 @@ class GlobalConfig:
                 if not (file_path.exists() or file_path.is_file()):
                     return False
         return True
+
+    @property
+    def _win32_directory_path(self):
+        """
+        Path to the Xrd/Binaries/Win32 directory
+        :return:
+        """
+        return Path(self.xrd_path).joinpath("Binaries/Win32")

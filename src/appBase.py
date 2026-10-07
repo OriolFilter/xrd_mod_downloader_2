@@ -158,14 +158,14 @@ class AppStruct(AppPublic, ABC):
         # TODO rename/re-figure it out
 
     @property
-    def _win32_mod_folder_path(self) -> Path:
+    def _win32_mod_directory_path(self) -> Path:
         """
         Returns the path for the Binaries/Win32/app_folder directory.
 
 
         :return:
         """
-        return Path(self._config.xrd_path).joinpath("Binaries/Win32/").joinpath(self.app_name.replace("/", "_"))
+        return self._config._win32_directory_path.joinpath(self.app_name.replace("/", "_"))
 
     async def download_version(self, version: str) -> bool:
         """# TODO IDK"""
@@ -477,7 +477,7 @@ class InjectorApp(GithubApp, ABC):
         ]
 
         # Check .bat exists
-        bat_path = Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(self._bat_file_name)
+        bat_path = self._config._win32_directory_path.joinpath(self._bat_file_name)
         if not (bat_path.exists() and bat_path.is_file()):
             return False
 
@@ -487,7 +487,7 @@ class InjectorApp(GithubApp, ABC):
             if not (file_path.exists() and file_path.is_file()):
                 return False
         for file in self._required_files:
-            file_path = self._win32_mod_folder_path.joinpath(file)
+            file_path = self._win32_mod_directory_path.joinpath(file)
             if not (file_path.exists() and file_path.is_file()):
                 return False
         return True
@@ -549,11 +549,11 @@ exit
             executable_name=self._executable_name,
             extra_args=" ".join(f'"{arg}"' for arg in self._launch_extra_args)
         )
-        if not self._win32_mod_folder_path.exists():
-            self._win32_mod_folder_path.mkdir(parents=True)
+        if not self._win32_mod_directory_path.exists():
+            self._win32_mod_directory_path.mkdir(parents=True)
 
         # Check DelayApp.bat
-        bat_file_path = Path(self._config.xrd_path).joinpath("Binaries/Win32").joinpath(self._bat_file_name)
+        bat_file_path = self._config._win32_directory_path.joinpath(self._bat_file_name)
         with open(bat_file_path, 'w+', encoding="utf-8") as file:
             file.write(bat_contents)
 
@@ -588,7 +588,7 @@ exit
         # Copy exe and dll/files
         for file in self._required_files:
             source_file_path = self.current_version_files_path.joinpath(file)
-            destination_file_path = self._win32_mod_folder_path.joinpath(file)
+            destination_file_path = self._win32_mod_directory_path.joinpath(file)
             if source_file_path.exists() and source_file_path.is_file() and not destination_file_path.is_dir():
                 shutil.copy2(source_file_path, destination_file_path)
             else:
